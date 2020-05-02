@@ -31,7 +31,9 @@ function initialize() {
 		make_output_textareas_scroll_pos_match_input_textarea_scroll_pos();
 	})
 
-	make_tab_key_insets_tab_character_on_all_textareas();
+	make_tab_key_insert_tab_character_on_all_textareas();
+
+	setInterval(update_output_textareas, 1000*10);
 }
 
 function make_output_textareas_scroll_pos_match_input_textarea_scroll_pos() {
@@ -49,24 +51,30 @@ function update_output_textareas() {
 	let all_lines = $('#textarea_input').val();
 	let lines = all_lines.split(/\r?\n/);
 	let total_num_hours = 0.0;
-	let new_content_for_textarea_output_time_tally = '', new_content_for_textarea_output_single_job_times = '';
+	let time_tally_str = '', single_job_times_str = '', time_of_day_str = '';
+	let start_date = new Date();
 	lines.forEach(function(line) {
 		let matches = line.match(/^[^\s]+.*?(\d+:\d\d)\s*$/);
 		if(matches != null) {
 			let num_hours_hh_mm_str = matches[1];
 			let num_hours_float = get_num_hours_float_from_HH_MM_str(num_hours_hh_mm_str);
 			total_num_hours += num_hours_float;
-			new_content_for_textarea_output_single_job_times += sprintf("%s\n", get_HH_MM_str_from_num_hours_float(num_hours_float));
-			new_content_for_textarea_output_time_tally += sprintf("%s\n", get_HH_MM_str_from_num_hours_float(total_num_hours));
+			single_job_times_str += sprintf("%s\n", get_HH_MM_str_from_num_hours_float(num_hours_float));
+			time_tally_str += sprintf("%s\n", get_HH_MM_str_from_num_hours_float(total_num_hours));
+			time_of_day = new Date(start_date.getTime() + total_num_hours*60*60*1000);
+			time_of_day_str += sprintf("%02d:%02d\n", time_of_day.getHours(), time_of_day.getMinutes());
 		} else {
-			new_content_for_textarea_output_single_job_times += "\n";
-			new_content_for_textarea_output_time_tally += "\n";
+			single_job_times_str += "\n";
+			time_tally_str += "\n";
+			time_of_day_str += "\n";
 		}
 	});
-	new_content_for_textarea_output_single_job_times = new_content_for_textarea_output_single_job_times.slice(0, -1);
-	new_content_for_textarea_output_time_tally = new_content_for_textarea_output_time_tally.slice(0, -1);
-	$('#textarea_output_single_job_times').text(new_content_for_textarea_output_single_job_times);
-	$('#textarea_output_time_tally').text(new_content_for_textarea_output_time_tally);
+	single_job_times_str = single_job_times_str.slice(0, -1);
+	time_tally_str = time_tally_str.slice(0, -1);
+	time_of_day_str = time_of_day_str.slice(0, -1);
+	$('#textarea_output_single_job_times').text(single_job_times_str);
+	$('#textarea_output_time_tally').text(time_tally_str);
+	$('#textarea_output_time_of_day').text(time_of_day_str);
 }
 
 function get_num_hours_float_from_HH_MM_str(hh_mm_str_) {
@@ -112,8 +120,9 @@ function set_value(textfieldname_, value_) {
 	return $("#"+textfieldname_).val(value_).trigger('input');
 }
 
-/* Thanks to https://stackoverflow.com/a/14166052 */
-function make_tab_key_insets_tab_character_on_all_textareas() {
+/* If we don't do this then the tab key switches to the next GUI control.  
+Code thanks to https://stackoverflow.com/a/14166052 */
+function make_tab_key_insert_tab_character_on_all_textareas() {
 	let textareas = document.getElementsByTagName('textarea');
 	let count = textareas.length;
 	for(let i=0;i<count;i++){
@@ -133,9 +142,7 @@ $(document).ready(initialize);
 /* 
 TO DO:
 - option to specify start time, or go with "current time" 
-- add a time-of-day-completed column 
 - either highlight undone jobs (first line thereof), or low-light done jobs 
-- highlight parsed times in input textarea 
 - test in other browsers 
 
 
@@ -149,6 +156,8 @@ TO DO:
 		<textarea id="textarea_output_single_job_times" rows="30" cols="10" spellcheck="false" readonly 
 			style="background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); background-size: 100% 4rem;"></textarea>
 		<textarea id="textarea_output_time_tally" rows="30" cols="10" spellcheck="false" readonly 
+			style="background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); background-size: 100% 4rem;"></textarea>
+		<textarea id="textarea_output_time_of_day" rows="30" cols="10" spellcheck="false" readonly 
 			style="background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); background-size: 100% 4rem;"></textarea>
 	</body>
 </html>

@@ -28,39 +28,45 @@ function initialize() {
 	bind_text_control_to_localstorage('textarea_input');
 
 	$('#textarea_input').scroll(function(){
-		make_textarea_time_tally_scroll_pos_match_textarea_input_scroll_pos();
+		make_output_textareas_scroll_pos_match_input_textarea_scroll_pos();
 	})
 
 	make_tab_key_insets_tab_character_on_all_textareas();
 }
 
-function make_textarea_time_tally_scroll_pos_match_textarea_input_scroll_pos() {
-	$('#textarea_time_tally').scrollTop($('#textarea_input').scrollTop());    
+function make_output_textareas_scroll_pos_match_input_textarea_scroll_pos() {
+	let pos = $('#textarea_input').scrollTop();
+	$('#textarea_output_single_job_times').scrollTop(pos);
+	$('#textarea_output_time_tally').scrollTop(pos);
 }
 
 function on_textarea_input_changed() {
-	update_textarea_time_tally_text();
-	make_textarea_time_tally_scroll_pos_match_textarea_input_scroll_pos();
+	update_output_textareas();
+	make_output_textareas_scroll_pos_match_input_textarea_scroll_pos();
 }
 
-function update_textarea_time_tally_text() {
+function update_output_textareas() {
 	let all_lines = $('#textarea_input').val();
 	let lines = all_lines.split(/\r?\n/);
 	let total_num_hours = 0.0;
-	let new_content_for_textarea_time_tally = '';
+	let new_content_for_textarea_output_time_tally = '', new_content_for_textarea_output_single_job_times = '';
 	lines.forEach(function(line) {
 		let matches = line.match(/^[^\s]+.*?(\d+:\d\d)\s*$/);
 		if(matches != null) {
 			let num_hours_hh_mm_str = matches[1];
 			let num_hours_float = get_num_hours_float_from_HH_MM_str(num_hours_hh_mm_str);
 			total_num_hours += num_hours_float;
-			new_content_for_textarea_time_tally += sprintf("%s\n", get_HH_MM_str_from_num_hours_float(total_num_hours));
+			new_content_for_textarea_output_single_job_times += sprintf("%s\n", get_HH_MM_str_from_num_hours_float(num_hours_float));
+			new_content_for_textarea_output_time_tally += sprintf("%s\n", get_HH_MM_str_from_num_hours_float(total_num_hours));
 		} else {
-			new_content_for_textarea_time_tally += "\n";
+			new_content_for_textarea_output_single_job_times += "\n";
+			new_content_for_textarea_output_time_tally += "\n";
 		}
 	});
-	new_content_for_textarea_time_tally = new_content_for_textarea_time_tally.slice(0, -1);
-	$('#textarea_time_tally').text(new_content_for_textarea_time_tally);
+	new_content_for_textarea_output_single_job_times = new_content_for_textarea_output_single_job_times.slice(0, -1);
+	new_content_for_textarea_output_time_tally = new_content_for_textarea_output_time_tally.slice(0, -1);
+	$('#textarea_output_single_job_times').text(new_content_for_textarea_output_single_job_times);
+	$('#textarea_output_time_tally').text(new_content_for_textarea_output_time_tally);
 }
 
 function get_num_hours_float_from_HH_MM_str(hh_mm_str_) {
@@ -93,6 +99,9 @@ function bind_text_control_to_localstorage(textarea_id_) {
 			g_text_area_ids_with_write_scheduled.add(textarea_id_);
 		}
 	});
+
+	// The above write is supposed to catch all edits.  This one is a backup plan, in case that one has bugs: 
+	setInterval(function() { localStorage.setItem(storage_key, get_value(textarea_id_)); }, 60*1000);
 }
 
 function get_value(textfieldname_) {
@@ -123,8 +132,6 @@ $(document).ready(initialize);
 
 /* 
 TO DO:
-- periodically write to local storage, for safety 
-- make another column showing each job's time.  redundant w/ main text area, but more visible at a glance. 
 - option to specify start time, or go with "current time" 
 - add a time-of-day-completed column 
 - either highlight undone jobs (first line thereof), or low-light done jobs 
@@ -139,7 +146,9 @@ TO DO:
 	<body>
 		<textarea id="textarea_input" rows="30" cols="100" spellcheck="false" 
 			style="background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); background-size: 100% 4rem;"></textarea>
-		<textarea id="textarea_time_tally" rows="30" cols="10" spellcheck="false" readonly 
+		<textarea id="textarea_output_single_job_times" rows="30" cols="10" spellcheck="false" readonly 
+			style="background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); background-size: 100% 4rem;"></textarea>
+		<textarea id="textarea_output_time_tally" rows="30" cols="10" spellcheck="false" readonly 
 			style="background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); background-size: 100% 4rem;"></textarea>
 	</body>
 </html>

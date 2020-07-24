@@ -20,11 +20,16 @@
 var g_text_area_ids_with_write_scheduled = new buckets.Set();
 
 function initialize() {
-	$('#textarea_input').on('propertychange keyup input paste', function(){
-		on_textarea_input_changed();
+	set_value('start_time_specified_time_textfield', get_hh_mm_str(new Date()));
+
+	['#textarea_input', '#start_time_specified_time_textfield'].forEach(function(textcompname) {
+		$(textcompname).on('propertychange keyup input paste', function(){
+			on_textarea_input_changed();
+		});
 	});
 	on_textarea_input_changed();
 
+	bind_radio_buttons_to_localstorage('start_time_type');
 	bind_text_control_to_localstorage('textarea_input');
 
 	$('#textarea_input').scroll(function(){
@@ -34,6 +39,16 @@ function initialize() {
 	make_tab_key_insert_tab_character_on_all_textareas();
 
 	setInterval(update_output_textareas, 1000*10);
+}
+
+function get_date_from_hh_mm_str(hh_mm_str_) {
+	let splits = hh_mm_str_.split(':', 2);
+	let hours = parseInt(splits[0]);
+	let minutes = parseInt(splits[1]);
+	let r = new Date();
+	r.setHours(hours);
+	r.setMinutes(minutes);
+	return r;
 }
 
 function make_output_textareas_scroll_pos_match_input_textarea_scroll_pos() {
@@ -48,12 +63,26 @@ function on_textarea_input_changed() {
 	make_output_textareas_scroll_pos_match_input_textarea_scroll_pos();
 }
 
+function get_start_date() {
+	if(radio_val('start_time_type') == 'current_time') {
+		return new Date();
+	} else if(radio_val('start_time_type') == 'specified_time') {
+		return get_date_from_hh_mm_str(get_value('start_time_specified_time_textfield'));
+	} else {
+		throw "error";
+	}
+}
+
+function get_hh_mm_str(date_) {
+	return sprintf("%02d:%02d\n", date_.getHours(), date_.getMinutes());
+}
+
 function update_output_textareas() {
 	let all_lines = $('#textarea_input').val();
 	let lines = all_lines.split(/\r?\n/);
 	let total_num_hours = 0.0;
 	let time_tally_str = '', single_job_times_str = '', time_of_day_str = '';
-	let start_date = new Date();
+	let start_date = get_start_date();
 	lines.forEach(function(line) {
 		let matches = line.match(/^[^\s]+.*?(\d+:\d\d)\s*$/);
 		if(matches != null) {
@@ -63,7 +92,7 @@ function update_output_textareas() {
 			single_job_times_str += sprintf("%s\n", get_HH_MM_str_from_num_hours_float(num_hours_float));
 			time_tally_str += sprintf("%s\n", get_HH_MM_str_from_num_hours_float(total_num_hours));
 			time_of_day = new Date(start_date.getTime() + total_num_hours*60*60*1000);
-			time_of_day_str += sprintf("%02d:%02d\n", time_of_day.getHours(), time_of_day.getMinutes());
+			time_of_day_str += get_hh_mm_str(time_of_day);
 		} else {
 			single_job_times_str += "\n";
 			time_tally_str += "\n";
@@ -79,7 +108,7 @@ function update_output_textareas() {
 }
 
 function get_num_hours_float_from_HH_MM_str(hh_mm_str_) {
-	let splits = hh_mm_str_.split(':',2);
+	let splits = hh_mm_str_.split(':', 2);
 	let hours = parseInt(splits[0]);
 	let minutes = parseInt(splits[1]);
 	let r = hours + minutes/60.0;
@@ -113,6 +142,25 @@ function bind_text_control_to_localstorage(textarea_id_) {
 	setInterval(function() { localStorage.setItem(storage_key, get_value(textarea_id_)); }, 60*1000);
 }
 
+function bind_radio_buttons_to_localstorage(radiogroupname_) {
+	var storage_key = document.URL+' - radiogroup:'+radiogroupname_;
+	var stored_val = localStorage.getItem(storage_key);
+	if(stored_val != null) {
+		set_radio_val(radiogroupname_, stored_val);
+	}
+	$("input[type=radio][name='" + radiogroupname_ + "']").each(function() {
+		$(this).click(function() { 
+			localStorage.setItem(storage_key, radio_val(radiogroupname_));
+		});
+	});
+}
+
+function set_radio_val(groupname_, newval_) {
+	$('input:radio[name='+groupname_+']').val([newval_]);
+	var s = 'input[name='+groupname_+']:checked';
+	$(s).click();
+}
+
 function get_value(textfieldname_) {
 	return $("#"+textfieldname_).val();
 }
@@ -138,11 +186,18 @@ function make_tab_key_insert_tab_character_on_all_textareas() {
 	}
 }
 
+function radio_val(groupname_) {
+	return $('input[name='+groupname_+']:checked').val();
+}
+
 $(document).ready(initialize);
 
 /* 
 TO DO:
 - option to specify start time, or go with "current time" 
+	- handle parse errors in "specified time" better, somehow.  
+	- disable text field if that radio button is not selected 
+- make the column headers always appear at the top, and put the text fields in a scroll pane.
 - either highlight undone jobs (first line thereof), or low-light done jobs 
 - test in other browsers 
 	- including mobile 
@@ -153,6 +208,13 @@ TO DO:
 		</script>
 	</head>
 	<body>
+		Start time:
+		<input type="radio" id="start_time_type_current_time_button" 
+			name="start_time_type" value="current_time" checked="checked"><label for="start_time_type_current_time_button">Now</label>
+		<input type="radio" id="start_time_type_specified_time_button" 
+			name="start_time_type" value="specified_time"><label for="start_time_type_specified_time_button">At:</label>
+		<input id="start_time_specified_time_textfield" type="text" name="start_time_specified_time_textfield" value="" />
+		<br>
 		<textarea rows="2" cols="100" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>Input:</textarea>
 		<textarea rows="2" cols="10" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>Job time:</textarea>
 		<textarea rows="2" cols="10" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>Job time tally:</textarea>

@@ -24,12 +24,18 @@ function initialize() {
 
 	['#textarea_input', '#start_time_specified_time_textfield'].forEach(function(textcompname) {
 		$(textcompname).on('propertychange keyup input paste', function(){
-			on_textarea_input_changed();
+			on_input_changed();
 		});
 	});
-	on_textarea_input_changed();
+	on_input_changed();
 
 	bind_radio_buttons_to_localstorage('start_time_type');
+	$("input[type=radio][name='" + 'start_time_type' + "']").each(function() {
+		$(this).click(function() { 
+			on_input_changed();
+		});
+	});
+
 	bind_text_control_to_localstorage('textarea_input');
 
 	$('#textarea_input').scroll(function(){
@@ -58,7 +64,7 @@ function make_output_textareas_scroll_pos_match_input_textarea_scroll_pos() {
 	$('#textarea_output_time_of_day').scrollTop(pos);
 }
 
-function on_textarea_input_changed() {
+function on_input_changed() {
 	update_output_textareas();
 	make_output_textareas_scroll_pos_match_input_textarea_scroll_pos();
 }

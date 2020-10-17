@@ -200,6 +200,8 @@ $(document).ready(initialize);
 
 /* 
 TO DO:
+- make the font different, so I don't get confused between this page and notepad++ 
+	- this has happened several times that I've noticed - and who knows how many times I haven't noticed. 
 - make a display when it's on the local drive, so i don't confuse the local version and the web version. 
 	- this happened once 
 - add a "safety factor" option 
@@ -211,8 +213,6 @@ TO DO:
 		- travel time in hot weather 
 		- moving slow because of hard workout or bad sleep 
 		- rarely-done thing 
-- make the font different, so I don't get confused between this page and notepad++ 
-	- this happened twice 
 - option to specify start time, or go with "current time" 
 	- done version 1 
 	- handle parse errors in "specified time" better, somehow.  
@@ -235,11 +235,11 @@ TO DO:
 			name="start_time_type" value="specified_time"><label for="start_time_type_specified_time_button">At:</label>
 		<input id="start_time_specified_time_textfield" type="text" name="start_time_specified_time_textfield" value="" />
 		<br>
-		<textarea rows="2" cols="100" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>Input:</textarea>
+		<textarea rows="2" cols="120" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>Input:</textarea>
 		<textarea rows="2" cols="10" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>Job time:</textarea>
 		<textarea rows="2" cols="10" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>Job time tally:</textarea>
 		<textarea rows="2" cols="10" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>Time of day finished:</textarea>
-		<textarea id="textarea_input" rows="300" cols="100" spellcheck="false" wrap="off" 
+		<textarea id="textarea_input" rows="300" cols="120" spellcheck="false" wrap="off" 
 			style="background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); background-size: 100% 4rem;"></textarea>
 		<textarea id="textarea_output_single_job_times" rows="300" cols="10" spellcheck="false" readonly 
 			style="background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); background-size: 100% 4rem;"></textarea>

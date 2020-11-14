@@ -200,6 +200,22 @@ $(document).ready(initialize);
 
 /* 
 TO DO:
+- target lines.  eg. [dinner target 21:45]. highlight in red if I'm going to miss the target. 
+- "buffer or bonus" lines.  expand to fill the time between this line and the next target. 
+	- user doesn't specify a time span.  web page will calculate and show a time span. 
+	- certain jobs should always have a "buffer or bonus" after them (eg. cook chicken) 
+	because they have waiting .  "buffer or bonus" could be immediately after, or well down.  
+	as long as a job w/ waiting isn't the last job of the day.  concretely: once I implement 
+	"buffer or bonus" I'll put one right after chicken. 
+- prereq dependency graph.  highlight in red if prereqs fail. 
+	- eg. "salt chicken" then "warm up the chicken" then "cook chicken" 
+- atomic cut-and-paste. 
+- "non-adjacent" option.  eg. two jobs which use the kitchen and job #1 has waiting.  
+I'm going to start on the next job.  but if the next job needs the kitchen too, that's a problem. 
+eg. chicken then eggs.  
+	- eg. don't cook the eggs then warm up the chicken  
+	- "warm up the chicken" is non-adjacent to "cook chicken".   consider not just non-adjacent option, 
+	but specify a min time span between the two jobs. 
 - make the font different, so I don't get confused between this page and notepad++ 
 	- this has happened several times that I've noticed - and who knows how many times I haven't noticed. 
 - make a display when it's on the local drive, so i don't confuse the local version and the web version. 

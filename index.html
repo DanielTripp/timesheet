@@ -213,9 +213,13 @@ TO DO:
 - "non-adjacent" option.  eg. two jobs which use the kitchen and job #1 has waiting.  
 I'm going to start on the next job.  but if the next job needs the kitchen too, that's a problem. 
 eg. chicken then eggs.  
+	- consider resource ID eg. "kitchen" 
 	- eg. don't cook the eggs then warm up the chicken  
 	- "warm up the chicken" is non-adjacent to "cook chicken".   consider not just non-adjacent option, 
 	but specify a min time span between the two jobs. 
+	- don't schedule "clean cpap" then "lunch".  if I'm leaving the house then they share a resource: being home.  
+		if I'm not leaving the house, they still shouldn't be scheduled adjacent in this order, but I don't 
+		know how to fit that into the resource system. 
 - make the font different, so I don't get confused between this page and notepad++ 
 	- this has happened several times that I've noticed - and who knows how many times I haven't noticed. 
 - make a display when it's on the local drive, so i don't confuse the local version and the web version. 

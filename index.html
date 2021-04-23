@@ -209,6 +209,34 @@ TO DO:
 		</script>
 	</head>
 	<body>
+		<textarea id="textarea_input_example" rows="23" cols="120" spellcheck="false" wrap="off" 
+			style="background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); background-size: 100% 4rem;" readonly>
+Example: 
+(copy this and paste it into the text area below)
+
+job #1  0:30
+job #2  1:15
+job #2  0:45
+
+All lines that start with a non-space character and end with NN:NN will be counted towards the time tally.
+Therefore the line below will not be counted.  So adding an "x" is a convenient way of crossing off jobs:
+job #4 0:30 x
+
+You can add which contain numbers and they won't be counted towards the tally, 
+as long as the line starts with a space or tab. 
+job #5   0:30
+  - note: last time this took 0:40 
+
+One way to show a reminder that you need to cross off, or show the start time for a job, 
+is a specify a time of 0:00, a below: 
+
+remember to drink water  0:00
+
+dinner start time (target 18:30)  0:00
+
+</textarea>
+		<br>
+		<br>
 		Start time:
 		<input type="radio" id="start_time_type_current_time_button" 
 			name="start_time_type" value="current_time" checked="checked"><label for="start_time_type_current_time_button">Now</label>

@@ -200,49 +200,10 @@ $(document).ready(initialize);
 
 /* 
 TO DO:
-- target lines.  eg. [dinner target 21:45]. highlight in red if I'm going to miss the target. 
-- "buffer or bonus" lines.  expand to fill the time between this line and the next target. 
-	- user doesn't specify a time span.  web page will calculate and show a time span. 
-	- certain jobs should always have a "buffer or bonus" after them (eg. cook chicken) 
-	because they have waiting .  "buffer or bonus" could be immediately after, or well down.  
-	as long as a job w/ waiting isn't the last job of the day.  concretely: once I implement 
-	"buffer or bonus" I'll put one right after chicken. 
-- prereq dependency graph.  highlight in red if prereqs fail. 
-	- eg. "salt chicken" then "warm up the chicken" then "cook chicken" 
-- atomic cut-and-paste. 
-- "non-adjacent" option.  eg. two jobs which use the kitchen and job #1 has waiting.  
-I'm going to start on the next job.  but if the next job needs the kitchen too, that's a problem. 
-eg. chicken then eggs.  
-	- consider resource ID eg. "kitchen" 
-	- eg. don't cook the eggs then warm up the chicken  
-	- "warm up the chicken" is non-adjacent to "cook chicken".   consider not just non-adjacent option, 
-	but specify a min time span between the two jobs. 
-	- don't schedule "clean cpap" then "lunch".  if I'm leaving the house then they share a resource: being home.  
-		if I'm not leaving the house, they still shouldn't be scheduled adjacent in this order, but I don't 
-		know how to fit that into the resource system. 
-- make the font different, so I don't get confused between this page and notepad++ 
-	- this has happened several times that I've noticed - and who knows how many times I haven't noticed. 
-- make a display when it's on the local drive, so i don't confuse the local version and the web version. 
-	- this happened once 
-- add a "safety factor" option 
-	- AKA multiplier option 
-	- multiply and/or add a constant number of minutes per job (add = transition time) 
-	- global and/or per-job 
-	- add reasons for safety factor: 
-		- don't feel like moving fast 
-		- travel time in hot weather 
-		- moving slow because of hard workout or bad sleep 
-		- rarely-done thing 
-- option to specify start time, or go with "current time" 
-	- done version 1 
-	- handle parse errors in "specified time" better, somehow.  
-	- disable text field if that radio button is not selected 
 - make the column headers always appear at the top, and put the text fields in a scroll pane.
 - either highlight undone jobs (first line thereof), or low-light done jobs 
 - test in other browsers 
 	- including mobile 
-
-
 */
 
 		</script>

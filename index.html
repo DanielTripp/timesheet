@@ -200,8 +200,37 @@ $(document).ready(initialize);
 
 /* 
 TO DO:
+- fix the long-standing bug which necessitates a refresh in a new tab 
+	- b/c on 2023-05-03 it happened and I didn't notice it. I thought about it later and went back and checked.  then I saw it.  that almost messed up my day.   it was a workday / evening timing issue.  if I hadn't gone back and checked, I would've either stayed up an hour late or not exercised. 
+- add a 'reset' line.  i.e. a certain magic string which will reset the 'job time tally' column back to zero.
+	- would seem to warrant, or necessitate, that we (devs) move the 'start time' out of the radio 
+		button / text field, and into the main text area, so that the user can reset 
+		the start time too. 
+	- useful for scenarios where I want to plan multiple days on one page.  eg. night before a day trip, 
+	and day of that day trip.  eg. 2022-04-22,23. 
+	- eg. 2022-09-17.  amanda's birthday outing to niagara.  I wanted to do about 2 timesheets at once: one to go pick up amanda, 
+	then another one for our outing (niagara, unknowns in niagara, hamilton, maybe dinner in toronto) 
+		- I could've done this w/ one timesheet probably.  but I had a mental blockage.  I think that I I didn't want to fuss w/ the end time of the first timesheet in order to make the second timesheet useful.  
+	- handle "start time = NOW" also. 
 - make the column headers always appear at the top, and put the text fields in a scroll pane.
 - either highlight undone jobs (first line thereof), or low-light done jobs 
+	- highlight jobs b/c 2022-04-24  I pasted this from todo.txt into the timesheet:
+			MAKE EXIT NOTES easter   0:05 
+			- easter   potatoes were cold    b/c oven was full  next time consider microwave    mom says stove no 
+			- below: morning 
+			- rapid test 
+				- add to day trip list 
+			- ping carolyn re: egg drop off 
+			- text becky chives    reminder  
+			- do time sheet for today 
+			- get car 
+			- above: morning 
+			- HIIT etc for apr 15   1:25 
+			- bring cooler, bike rack 
+			- store returns: staples and best buy 
+			- on site: check boat leak   (dad's req) 
+	... in the morning.  planned my whole day.  and I didn't realize that "HIIT etc for apr 15   1:25" got flagged as a job until 5:15 pm.  
+	I only realized b/c I had gone ~ 1 hour overtime on another job and was looking for jobs to cut out.  and the time didn't seem to add up. 
 - test in other browsers 
 	- including mobile 
 */
@@ -222,13 +251,13 @@ All lines that start with a non-space character and end with NN:NN will be count
 Therefore the line below will not be counted.  So adding an "x" is a convenient way of crossing off jobs:
 job #4 0:30 x
 
-You can add which contain numbers and they won't be counted towards the tally, 
+You can add lines which contain numbers and they won't be counted towards the tally, 
 as long as the line starts with a space or tab. 
 job #5   0:30
   - note: last time this took 0:40 
 
 One way to show a reminder that you need to cross off, or show the start time for a job, 
-is a specify a time of 0:00, a below: 
+is a specify a time of 0:00, as below: 
 
 remember to drink water  0:00
 
@@ -248,13 +277,13 @@ dinner start time (target 18:30)  0:00
 		<textarea rows="2" cols="10" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>Job time:</textarea>
 		<textarea rows="2" cols="10" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>Job time tally:</textarea>
 		<textarea rows="2" cols="10" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>Time of day finished:</textarea>
-		<textarea id="textarea_input" rows="300" cols="120" spellcheck="false" wrap="off" 
+		<textarea id="textarea_input" rows="600" cols="120" spellcheck="false" wrap="off" 
 			style="background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); background-size: 100% 4rem;"></textarea>
-		<textarea id="textarea_output_single_job_times" rows="300" cols="10" spellcheck="false" readonly 
+		<textarea id="textarea_output_single_job_times" rows="600" cols="10" spellcheck="false" readonly 
 			style="background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); background-size: 100% 4rem;"></textarea>
-		<textarea id="textarea_output_time_tally" rows="300" cols="10" spellcheck="false" readonly 
+		<textarea id="textarea_output_time_tally" rows="600" cols="10" spellcheck="false" readonly 
 			style="background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); background-size: 100% 4rem;"></textarea>
-		<textarea id="textarea_output_time_of_day" rows="300" cols="10" spellcheck="false" readonly 
+		<textarea id="textarea_output_time_of_day" rows="600" cols="10" spellcheck="false" readonly 
 			style="background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); background-size: 100% 4rem;"></textarea>
 	</body>
 </html>

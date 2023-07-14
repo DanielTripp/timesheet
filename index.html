@@ -92,19 +92,29 @@ function update_output_textareas() {
 	let start_date = get_start_date();
 	lines.forEach(function(line) {
 		console.log("in update_output_textareas() - line");
-		let matches = line.match(/^[^\s]+.*?(\d+:\d\d)\s*$/);
-		if(matches != null) {
-			let num_hours_hh_mm_str = matches[1];
-			let num_hours_float = get_num_hours_float_from_HH_MM_str(num_hours_hh_mm_str);
-			total_num_hours += num_hours_float;
-			single_job_times_str += sprintf("%s\n", get_HH_MM_str_from_num_hours_float(num_hours_float));
-			time_tally_str += sprintf("%s\n", get_HH_MM_str_from_num_hours_float(total_num_hours));
-			time_of_day = new Date(start_date.getTime() + total_num_hours*60*60*1000);
-			time_of_day_str += get_hh_mm_str(time_of_day);
-		} else {
+		let set_time_of_day_match = line.match(/^time=.*?(\d\d+:\d\d)\s*$/);
+		if(set_time_of_day_match != null) {
+			let time_of_day_date = get_date_from_hh_mm_str(set_time_of_day_match[1]);
+			start_date = time_of_day_date;
+			total_num_hours = 0.0;
 			single_job_times_str += "\n";
 			time_tally_str += "\n";
 			time_of_day_str += "\n";
+		} else {
+			let job_match = line.match(/^[^\s]+.*?(\d+:\d\d)\s*$/);
+			if(job_match != null) {
+				let num_hours_hh_mm_str = job_match[1];
+				let num_hours_float = get_num_hours_float_from_HH_MM_str(num_hours_hh_mm_str);
+				total_num_hours += num_hours_float;
+				single_job_times_str += sprintf("%s\n", get_HH_MM_str_from_num_hours_float(num_hours_float));
+				time_tally_str += sprintf("%s\n", get_HH_MM_str_from_num_hours_float(total_num_hours));
+				time_of_day = new Date(start_date.getTime() + total_num_hours*60*60*1000);
+				time_of_day_str += get_hh_mm_str(time_of_day);
+			} else {
+				single_job_times_str += "\n";
+				time_tally_str += "\n";
+				time_of_day_str += "\n";
+			}
 		}
 	});
 	single_job_times_str = single_job_times_str.slice(0, -1);

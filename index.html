@@ -20,21 +20,13 @@
 var g_text_area_ids_with_write_scheduled = new buckets.Set();
 
 function initialize() {
-	set_value('start_time_specified_time_textfield', get_hh_mm_str(new Date()));
 
-	['#textarea_input', '#start_time_specified_time_textfield'].forEach(function(textcompname) {
+	['#textarea_input'].forEach(function(textcompname) {
 		$(textcompname).on('propertychange keyup input paste', function(){
 			on_input_changed();
 		});
 	});
 	on_input_changed();
-
-	bind_radio_buttons_to_localstorage('start_time_type');
-	$("input[type=radio][name='" + 'start_time_type' + "']").each(function() {
-		$(this).click(function() { 
-			on_input_changed();
-		});
-	});
 
 	bind_text_control_to_localstorage('textarea_input');
 
@@ -69,16 +61,6 @@ function on_input_changed() {
 	make_output_textareas_scroll_pos_match_input_textarea_scroll_pos();
 }
 
-function get_start_date() {
-	if(radio_val('start_time_type') == 'current_time') {
-		return new Date();
-	} else if(radio_val('start_time_type') == 'specified_time') {
-		return get_date_from_hh_mm_str(get_value('start_time_specified_time_textfield'));
-	} else {
-		throw "error";
-	}
-}
-
 function get_hh_mm_str(date_) {
 	return sprintf("%02d:%02d\n", date_.getHours(), date_.getMinutes());
 }
@@ -89,17 +71,18 @@ function update_output_textareas() {
 	let lines = all_lines.split(/\r?\n/);
 	let total_num_hours = 0.0;
 	let time_tally_str = '', single_job_times_str = '', time_of_day_str = '';
-	let start_date = get_start_date();
+	let start_date = new Date();
 	lines.forEach(function(line) {
 		console.log("in update_output_textareas() - line");
-		let set_time_of_day_match = line.match(/^time=.*?(\d\d+:\d\d)\s*$/);
+		let set_time_of_day_match = line.match(/^time=.*?(\d\d+:\d\d|now)\s*$/);
 		if(set_time_of_day_match != null) {
-			let time_of_day_date = get_date_from_hh_mm_str(set_time_of_day_match[1]);
+			let new_time_of_day_str = set_time_of_day_match[1];
+			let time_of_day_date = new_time_of_day_str === "now" ? new Date() : get_date_from_hh_mm_str(new_time_of_day_str);
 			start_date = time_of_day_date;
 			total_num_hours = 0.0;
-			single_job_times_str += "\n";
-			time_tally_str += "\n";
-			time_of_day_str += "\n";
+			single_job_times_str += "0:00\n";
+			time_tally_str += "0:00\n";
+			time_of_day_str += get_hh_mm_str(start_date);
 		} else {
 			let job_match = line.match(/^[^\s]+.*?(\d+:\d\d)\s*$/);
 			if(job_match != null) {
@@ -212,19 +195,12 @@ $(document).ready(initialize);
 
 /* 
 TO DO:
+
 - fix the long-standing bug which necessitates a refresh in a new tab 
 	- b/c on 2023-05-03 it happened and I didn't notice it. I thought about it later and went back and checked.  then I saw it.  that almost messed up my day.   it was a workday / evening timing issue.  if I hadn't gone back and checked, I would've either stayed up an hour late or not exercised. 
-- add a 'reset' line.  i.e. a certain magic string which will reset the 'job time tally' column back to zero.
-	- would seem to warrant, or necessitate, that we (devs) move the 'start time' out of the radio 
-		button / text field, and into the main text area, so that the user can reset 
-		the start time too. 
-	- useful for scenarios where I want to plan multiple days on one page.  eg. night before a day trip, 
-	and day of that day trip.  eg. 2022-04-22,23. 
-	- eg. 2022-09-17.  amanda's birthday outing to niagara.  I wanted to do about 2 timesheets at once: one to go pick up amanda, 
-	then another one for our outing (niagara, unknowns in niagara, hamilton, maybe dinner in toronto) 
-		- I could've done this w/ one timesheet probably.  but I had a mental blockage.  I think that I I didn't want to fuss w/ the end time of the first timesheet in order to make the second timesheet useful.  
-	- handle "start time = NOW" also. 
+
 - make the column headers always appear at the top, and put the text fields in a scroll pane.
+
 - either highlight undone jobs (first line thereof), or low-light done jobs 
 	- highlight jobs b/c 2022-04-24  I pasted this from todo.txt into the timesheet:
 			MAKE EXIT NOTES easter   0:05 
@@ -242,34 +218,43 @@ TO DO:
 			- store returns: staples and best buy 
 			- on site: check boat leak   (dad's req) 
 	... in the morning.  planned my whole day.  and I didn't realize that "HIIT etc for apr 15   1:25" got flagged as a job until 5:15 pm.  
+	it wasn't a job on this timesheet.  it was a copy-and-paste from an earlier timesheet that was supposed to be a part of those exit notes. 
 	I only realized b/c I had gone ~ 1 hour overtime on another job and was looking for jobs to cut out.  and the time didn't seem to add up. 
+
 - test in other browsers 
 	- including mobile 
+
 */
 
 		</script>
 	</head>
 	<body>
-		<textarea id="textarea_input_example" rows="23" cols="120" spellcheck="false" wrap="off" 
+		<textarea id="textarea_input_example" rows="30" cols="120" spellcheck="false" wrap="off" 
 			style="background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); background-size: 100% 4rem;" readonly>
 Example: 
 (copy this and paste it into the text area below)
 
+time=15:00
 job #1  0:30
 job #2  1:15
 job #2  0:45
 
-All lines that start with a non-space character and end with NN:NN will be counted towards the time tally.
-Therefore the line below will not be counted.  So adding an "x" is a convenient way of crossing off jobs:
+A "time=HH:MM" line sets (or resets) the start time.  You can use multiple 
+"time=HH:MM" lines.  If you don't use any, the current time will be used as the 
+start time.
+
+Any line that doesn't start with "time=" and starts with a non-space character 
+and ends with HH:MM will be counted towards the time tally.  Therefore the line 
+below will not be counted.  So adding an "x" is a convenient way of crossing 
+off jobs:
 job #4 0:30 x
 
-You can add lines which contain numbers and they won't be counted towards the tally, 
-as long as the line starts with a space or tab. 
-job #5   0:30
-  - note: last time this took 0:40 
+You can add lines which contain numbers and they won't be counted towards the 
+tally, as long as the line starts with a space or tab.  job #5   0:30
+	- note: last time this took 0:40 
 
-One way to show a reminder that you need to cross off, or show the start time for a job, 
-is to specify a time of 0:00, as below: 
+One way to show a reminder that you need to cross off, or show the start time 
+for a job, is to specify a time of 0:00, as below: 
 
 remember to drink water  0:00
 
@@ -277,13 +262,6 @@ dinner start time (target 18:30)  0:00
 
 </textarea>
 		<br>
-		<br>
-		Start time:
-		<input type="radio" id="start_time_type_current_time_button" 
-			name="start_time_type" value="current_time" checked="checked"><label for="start_time_type_current_time_button">Now</label>
-		<input type="radio" id="start_time_type_specified_time_button" 
-			name="start_time_type" value="specified_time"><label for="start_time_type_specified_time_button">At:</label>
-		<input id="start_time_specified_time_textfield" type="text" name="start_time_specified_time_textfield" value="" />
 		<br>
 		<textarea rows="2" cols="120" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>Input:</textarea>
 		<textarea rows="2" cols="10" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>Job time:</textarea>

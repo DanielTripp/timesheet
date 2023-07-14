@@ -84,12 +84,14 @@ function get_hh_mm_str(date_) {
 }
 
 function update_output_textareas() {
+	console.log("in update_output_textareas()");
 	let all_lines = $('#textarea_input').val();
 	let lines = all_lines.split(/\r?\n/);
 	let total_num_hours = 0.0;
 	let time_tally_str = '', single_job_times_str = '', time_of_day_str = '';
 	let start_date = get_start_date();
 	lines.forEach(function(line) {
+		console.log("in update_output_textareas() - line");
 		let matches = line.match(/^[^\s]+.*?(\d+:\d\d)\s*$/);
 		if(matches != null) {
 			let num_hours_hh_mm_str = matches[1];

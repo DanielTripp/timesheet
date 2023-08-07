@@ -66,14 +66,12 @@ function get_hh_mm_str(date_) {
 }
 
 function update_output_textareas() {
-	console.log("in update_output_textareas()");
 	let all_lines = $('#textarea_input').val();
 	let lines = all_lines.split(/\r?\n/);
 	let total_num_hours = 0.0;
 	let time_tally_str = '', single_job_times_str = '', time_of_day_str = '';
 	let start_date = new Date();
 	lines.forEach(function(line) {
-		console.log("in update_output_textareas() - line");
 		let set_time_of_day_match = line.match(/^time=.*?(\d\d+:\d\d|now)\s*$/);
 		if(set_time_of_day_match != null) {
 			let new_time_of_day_str = set_time_of_day_match[1];
@@ -103,9 +101,9 @@ function update_output_textareas() {
 	single_job_times_str = single_job_times_str.slice(0, -1);
 	time_tally_str = time_tally_str.slice(0, -1);
 	time_of_day_str = time_of_day_str.slice(0, -1);
-	$('#textarea_output_single_job_times').text(single_job_times_str);
-	$('#textarea_output_time_tally').text(time_tally_str);
-	$('#textarea_output_time_of_day').text(time_of_day_str);
+	$('#textarea_output_single_job_times').val(single_job_times_str);
+	$('#textarea_output_time_tally').val(time_tally_str);
+	$('#textarea_output_time_of_day').val(time_of_day_str);
 }
 
 function get_num_hours_float_from_HH_MM_str(hh_mm_str_) {
@@ -196,7 +194,23 @@ $(document).ready(initialize);
 /* 
 TO DO:
 
+- document "time=now"
+
 - fix the long-standing bug which necessitates a refresh in a new tab 
+	- 08-07:
+		- on breakpoint right after update in code:
+			- $('#textarea_output_single_job_times')[0].innerText returned desired value
+			- $('#textarea_output_single_job_times')[0].innerHTML returned desired value
+			- $('#textarea_output_single_job_times').text();
+			- using val eg. $('#textarea_output_time_of_day').val("xyz"); instead of text() in debugger seemed to work.  will change code as an experimental fix. 
+			- manual 'edit as html' on #textarea_output_single_job_times  showed desired value 
+				- did 'edit as html', made no change, pressed ctrl-ENTER - no change 
+				- did 'edit as html', added an "x", pressed ctrl-ENTER - change.  fixed. worked around.  all subsequent updates worked.
+	- findings 2023-07-30:
+		- $('#textarea_output_single_job_times').text(single_job_times_str); was called correctly i.e. w/ a sensible arg.  ==> my regexes etc. are working.  the bug exists later, in the page update, somehow. 
+		- $('#textarea_output_single_job_times').text() returned something sensible IIRC 
+		- one of $('#textarea_output_single_job_times')[0].innerText and innerHTML did not return something sensible  - I forget which 
+		- work-around - I hacked the DOM - did 'edit as html' on the text area, added a junk line.  waited a few seconds.  then it got updated normally from that point forward. 
 	- b/c on 2023-05-03 it happened and I didn't notice it. I thought about it later and went back and checked.  then I saw it.  that almost messed up my day.   it was a workday / evening timing issue.  if I hadn't gone back and checked, I would've either stayed up an hour late or not exercised. 
 
 - make the column headers always appear at the top, and put the text fields in a scroll pane.

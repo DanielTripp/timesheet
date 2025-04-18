@@ -194,26 +194,23 @@ $(document).ready(initialize);
 /* 
 TO DO:
 
-- document "time=now"
+- put help in an accordion.
 
-- fix the long-standing bug which necessitates a refresh in a new tab 
-	- 08-07:
-		- on breakpoint right after update in code:
-			- $('#textarea_output_single_job_times')[0].innerText returned desired value
-			- $('#textarea_output_single_job_times')[0].innerHTML returned desired value
-			- $('#textarea_output_single_job_times').text();
-			- using val eg. $('#textarea_output_time_of_day').val("xyz"); instead of text() in debugger seemed to work.  will change code as an experimental fix. 
-			- manual 'edit as html' on #textarea_output_single_job_times  showed desired value 
-				- did 'edit as html', made no change, pressed ctrl-ENTER - no change 
-				- did 'edit as html', added an "x", pressed ctrl-ENTER - change.  fixed. worked around.  all subsequent updates worked.
-	- findings 2023-07-30:
-		- $('#textarea_output_single_job_times').text(single_job_times_str); was called correctly i.e. w/ a sensible arg.  ==> my regexes etc. are working.  the bug exists later, in the page update, somehow. 
-		- $('#textarea_output_single_job_times').text() returned something sensible IIRC 
-		- one of $('#textarea_output_single_job_times')[0].innerText and innerHTML did not return something sensible  - I forget which 
-		- work-around - I hacked the DOM - did 'edit as html' on the text area, added a junk line.  waited a few seconds.  then it got updated normally from that point forward. 
-	- b/c on 2023-05-03 it happened and I didn't notice it. I thought about it later and went back and checked.  then I saw it.  that almost messed up my day.   it was a workday / evening timing issue.  if I hadn't gone back and checked, I would've either stayed up an hour late or not exercised. 
+- bug: "time=7:30" is seen as a job, not a time reset.  "time=07:30" is ok. 
 
-- make the column headers always appear at the top, and put the text fields in a scroll pane.
+- make it sendable via plain text email.  don't need a screenshot.
+
+- add an alias for "time=": start_time (so I can send it to people) 
+
+- add an "export" option which includes job end times etc. 
+
+- add a 12-hour time option.   for export, at least.  not for me.  for other people. 
+
+- make column headers sticky.  
+
+- add a 'job start time' column. 
+
+- handle long lines better. 
 
 - either highlight undone jobs (first line thereof), or low-light done jobs 
 	- highlight jobs b/c 2022-04-24  I pasted this from todo.txt into the timesheet:
@@ -243,7 +240,7 @@ TO DO:
 		</script>
 	</head>
 	<body>
-		<textarea id="textarea_input_example" rows="30" cols="120" spellcheck="false" wrap="off" 
+		<textarea id="textarea_input_example" rows="33" cols="120" spellcheck="false" wrap="off" 
 			style="background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); background-size: 100% 4rem;" readonly>
 Example: 
 (copy this and paste it into the text area below)
@@ -255,7 +252,9 @@ job #2  0:45
 
 A "time=HH:MM" line sets (or resets) the start time.  You can use multiple 
 "time=HH:MM" lines.  If you don't use any, the current time will be used as the 
-start time.
+start time - and this will be updated several times per minute.  "time=now" 
+sets the start time to the current time - and this will also be updated several 
+times per minute.
 
 Any line that doesn't start with "time=" and starts with a non-space character 
 and ends with HH:MM will be counted towards the time tally.  Therefore the line 

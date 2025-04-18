@@ -69,7 +69,7 @@ function update_output_textareas() {
 	let time_tally_str = '', single_job_times_str = '', time_of_day_str = '';
 	let start_date = new Date();
 	lines.forEach(function(line) {
-		let set_time_of_day_match = line.match(/^time=.*?(\d\d+:\d\d|now)\s*$/);
+		let set_time_of_day_match = line.match(/^time=.*?(\d{1,2}:\d\d|now)\s*$/);
 		if(set_time_of_day_match != null) {
 			let new_time_of_day_str = set_time_of_day_match[1];
 			let time_of_day_date = new_time_of_day_str === "now" ? new Date() : get_date_from_hh_mm_str(new_time_of_day_str);

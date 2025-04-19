@@ -31,7 +31,54 @@ function initialize() {
 		make_output_textareas_scroll_pos_match_input_textarea_scroll_pos();
 	})
 
+	$('#export_button').click(async () => {
+		try {
+			update_output_textareas();
+			let str = getExportedStringVersionOfTextAreas();
+			await navigator.clipboard.writeText(str);
+			alert('Exported to clipboard.');
+		} catch(e) {
+			alert(`Error during export:\n\n${e.message}\n\n${e.stack}`);
+			console.error(e);
+		}
+	});
+
 	setInterval(update_output_textareas, 1000*10);
+}
+
+function getTextAreaLines(selector_) {
+	return $(selector_).val().split(/\r?\n/);
+}
+
+function getExportedStringVersionOfTextAreas() {
+	let inputLines = getTextAreaLines('#textarea_input');
+	let outputSingleJobTimesLines = getTextAreaLines('#textarea_output_single_job_times');
+	let outputTimeTallyLines = getTextAreaLines('#textarea_output_time_tally');
+	let outputTimeOfDayLines = getTextAreaLines('#textarea_output_time_of_day');
+	if((new Set([inputLines.length, outputSingleJobTimesLines.length, outputTimeTallyLines.length, outputTimeOfDayLines.length])).size != 1) {
+		throw new Error("text area lines aren't the same length.");
+	}
+	let maxInputJobLineLen = 0;
+	for(let i=0; i<inputLines.length; i++) {
+		let a = inputLines[i], b = outputSingleJobTimesLines[i], c = outputTimeTallyLines[i], d = outputTimeOfDayLines[i];
+		if((new Set([!!b, !!c, !!d])).size != 1) {
+			throw new Error("output column presence doesn't match.");
+		}
+		let isAJobLine = !!b;
+		if(isAJobLine) {
+			maxInputJobLineLen = Math.max(maxInputJobLineLen, a.length);
+		}
+	}
+	let r = '';
+	for(let i=0; i<inputLines.length; i++) {
+		let a = inputLines[i], b = outputSingleJobTimesLines[i], c = outputTimeTallyLines[i], d = outputTimeOfDayLines[i];
+		if(b) {
+			r += `${a}   End time = ${d}\n`;
+		} else {
+			r += `${inputLines[i]}\n`;
+		}
+	}
+	return r;
 }
 
 function get_date_from_hh_mm_str(hh_mm_str_) {
@@ -226,6 +273,8 @@ dinner start time (target 18:30)  0:00
 
 			</textarea>
 		</details>
+		<br>
+		<button id="export_button">Export</button>
 		<br>
 		<br>
 		<textarea rows="2" cols="120" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>Input:</textarea>

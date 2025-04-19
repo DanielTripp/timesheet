@@ -2,83 +2,37 @@
 <html>
 	<head>
 		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width">
 		<title>Timesheet</title>
-		<script type="text/javascript" src="./jquery_3_5_0.js"></script>
+		<script type="text/javascript" src="./libs.js"></script>
 	
 		<style>
 			summary {
 				cursor: pointer;
 				font-size: 1.2em;
 			}
+
+			textarea {
+				background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); 
+				background-size: 100% 4rem;
+				width: 100%; 
+				box-sizing: border-box; 
+			}
+
 		</style>
 
 		<script type="text/javascript">
 
-var g_text_area_ids_with_write_scheduled = new buckets.Set();
+let g_text_area_ids_with_write_scheduled = new buckets.Set();
 
 function initialize() {
 
-	['#textarea_input'].forEach(function(textcompname) {
-		$(textcompname).on('propertychange keyup input paste', function(){
-			on_input_changed();
-		});
-	});
+	$('#textarea_input').on('propertychange keyup input paste', on_input_changed);
 	on_input_changed();
 
 	bind_text_control_to_localstorage('textarea_input');
 
-	$('#textarea_input').scroll(function(){
-		make_output_textareas_scroll_pos_match_input_textarea_scroll_pos();
-	})
-
-	$('#export_button').click(async () => {
-		try {
-			update_output_textareas();
-			let str = getExportSingleStringVersionOfTextAreas();
-			await navigator.clipboard.writeText(str);
-			alert('Exported to clipboard.');
-		} catch(e) {
-			alert(`Error during export:\n\n${e.message}\n\n${e.stack}`);
-			console.error(e);
-		}
-	});
-
-	setInterval(update_output_textareas, 1000*10);
-}
-
-function getTextAreaLines(selector_) {
-	return $(selector_).val().split(/\r?\n/);
-}
-
-function getExportSingleStringVersionOfTextAreas() {
-	let inputLines = getTextAreaLines('#textarea_input');
-	let outputDurationsLines = getTextAreaLines('#textarea_output_durations');
-	let outputStartTimeLines = getTextAreaLines('#textarea_output_start_times');
-	let outputEndTimeLines = getTextAreaLines('#textarea_output_end_times');
-	if((new Set([inputLines.length, outputDurationsLines.length, outputStartTimeLines.length, outputEndTimeLines.length])).size != 1) {
-		throw new Error("text area lines aren't the same length.");
-	}
-	let maxInputJobLineLen = 0;
-	for(let i=0; i<inputLines.length; i++) {
-		let a = inputLines[i], b = outputDurationsLines[i], c = outputStartTimeLines[i], d = outputEndTimeLines[i];
-		if((new Set([!!b, !!c, !!d])).size != 1) {
-			throw new Error("output column presence doesn't match.");
-		}
-		let isAJobLine = !!b;
-		if(isAJobLine) {
-			maxInputJobLineLen = Math.max(maxInputJobLineLen, a.length);
-		}
-	}
-	let r = '';
-	for(let i=0; i<inputLines.length; i++) {
-		let a = inputLines[i], b = outputDurationsLines[i], c = outputStartTimeLines[i], d = outputEndTimeLines[i];
-		if(b) {
-			r += `${a}   (Start time = ${c}, end time = ${d})\n`;
-		} else {
-			r += `${inputLines[i]}\n`;
-		}
-	}
-	return r;
+	setInterval(update_decorations, 1000*10);
 }
 
 function get_date_from_hh_mm_str(hh_mm_str_) {
@@ -91,63 +45,106 @@ function get_date_from_hh_mm_str(hh_mm_str_) {
 	return r;
 }
 
-function make_output_textareas_scroll_pos_match_input_textarea_scroll_pos() {
-	let pos = $('#textarea_input').scrollTop();
-	$('#textarea_output_durations').scrollTop(pos);
-	$('#textarea_output_start_times').scrollTop(pos);
-	$('#textarea_output_end_times').scrollTop(pos);
-}
-
 function on_input_changed() {
-	update_output_textareas();
-	make_output_textareas_scroll_pos_match_input_textarea_scroll_pos();
+	update_decorations();
 }
 
 function get_hh_mm_str(date_) {
 	return sprintf("%02d:%02d", date_.getHours(), date_.getMinutes());
 }
 
-function update_output_textareas() {
-	let all_lines = $('#textarea_input').val();
-	let lines = all_lines.split(/\r?\n/);
+function getDecorationStr(start_time_str_, end_time_str_) {
+	/* if you change this, then change getDecorationStrRegexStr() too. */
+	let r = `  [start=${start_time_str_}, end=${end_time_str_}]`;
+	return r;
+}
+
+function getDecorationStrRegexStr() {
+	return '[ ]{0,2}\\[start=\\d{1,2}:\\d\\d, end=\\d{1,2}:\\d\\d]';
+}
+
+function update_decorations() {
+	let textarea = $('#textarea_input').get(0);
+	let selectionStart = textarea.selectionStart, selectionEnd = textarea.selectionEnd;
+	const LINE_DELIM = '\n';
+	let lines = textarea.value.split(LINE_DELIM);
 	let total_num_hours = 0.0;
-	let durations_str = '', start_times_str = '', end_times_str = '';
 	let start_date = new Date();
-	lines.forEach(function(line) {
-		let set_time_of_day_match = line.match(/^time=.*?(\d{1,2}:\d\d|now)\s*$/);
-		if(set_time_of_day_match != null) {
-			let new_time_of_day_str = set_time_of_day_match[1];
-			let time_of_day_date = new_time_of_day_str === "now" ? new Date() : get_date_from_hh_mm_str(new_time_of_day_str);
-			start_date = time_of_day_date;
-			total_num_hours = 0.0;
-			durations_str += "0:00\n";
-			let start_and_end_time = get_hh_mm_str(start_date);
-			start_times_str += start_and_end_time+'\n';
-			end_times_str += start_and_end_time+'\n';
-		} else {
-			let job_match = line.match(/^[^\s]+.*?(\d+:\d\d)\s*$/);
-			if(job_match != null) {
-				let num_hours_hh_mm_str = job_match[1];
-				let num_hours_float = get_num_hours_float_from_HH_MM_str(num_hours_hh_mm_str);
-				let start_time = new Date(start_date.getTime() + total_num_hours*60*60*1000);
-				start_times_str += get_hh_mm_str(start_time)+'\n';
-				total_num_hours += num_hours_float;
-				durations_str += sprintf("%s\n", get_HH_MM_str_from_num_hours_float(num_hours_float));
-				end_time = new Date(start_date.getTime() + total_num_hours*60*60*1000);
-				end_times_str += get_hh_mm_str(end_time)+'\n';
-			} else {
-				durations_str += "\n";
-				start_times_str += "\n";
-				end_times_str += "\n";
+	let set_time_of_day_regex = new RegExp(`^time=.*?(\\d{1,2}:\\d\\d|now)(.*?)(${getDecorationStrRegexStr()})?\\s*$`, 'd');
+	let job_regex = new RegExp(`^[^\\s]+[^[]*(\\d+:\\d\\d)(.*?)(${getDecorationStrRegexStr()})?\\s*$`, 'd');
+	let cur_line_start_pos = 0, cur_line_end_pos = 0;
+	for (let [iLine, line] of lines.entries()) {
+		function replace_cur_line(new_line__) {
+			if(new_line__ !== undefined && new_line__ !== line) { /* setRangeText() breaks undo, so we don't want to call it any more than we need to. */
+				textarea.setRangeText(new_line__, cur_line_start_pos, cur_line_end_pos);
 			}
 		}
-	});
-	durations_str = durations_str.slice(0, -1);
-	start_times_str = start_times_str.slice(0, -1);
-	end_times_str = end_times_str.slice(0, -1);
-	$('#textarea_output_durations').val(durations_str);
-	$('#textarea_output_start_times').val(start_times_str);
-	$('#textarea_output_end_times').val(end_times_str);
+		let new_line;
+		cur_line_end_pos = cur_line_start_pos + line.length;
+		let set_time_of_day_match = line.match(set_time_of_day_regex);
+		if(set_time_of_day_match != null) {
+			let is_cancelled = /\S/.test(set_time_of_day_match[2]);
+			if(is_cancelled) {
+				let new_decoration_str = '';
+				let has_decoration_already = !!set_time_of_day_match[3];
+				if(has_decoration_already) {
+					let [old_decoration_start, old_decoration_end] = set_time_of_day_match.indices[3];
+					new_line = line.slice(0, old_decoration_start) + new_decoration_str + line.slice(old_decoration_end);
+				}
+			} else {
+				let new_time_of_day_str = set_time_of_day_match[1];
+				let time_of_day_date = new_time_of_day_str === "now" ? new Date() : get_date_from_hh_mm_str(new_time_of_day_str);
+				start_date = time_of_day_date;
+				total_num_hours = 0.0;
+				let start_time_str = get_hh_mm_str(start_date); end_time_str = start_time_str;
+				let new_decoration_str = getDecorationStr(start_time_str, end_time_str);
+				let has_decoration_already = !!set_time_of_day_match[3];
+				if(has_decoration_already) {
+					let [old_decoration_start, old_decoration_end] = set_time_of_day_match.indices[3];
+					new_line = line.slice(0, old_decoration_start) + new_decoration_str + line.slice(old_decoration_end);
+				} else {
+					new_line = line + new_decoration_str;
+				}
+			}
+		} else {
+			let job_match = line.match(job_regex);
+			if(job_match != null) {
+				let is_cancelled = /\S/.test(job_match[2]);
+				if(is_cancelled) {
+					let new_decoration_str = '';
+					let has_decoration_already = !!job_match[3];
+					if(has_decoration_already) {
+						let [old_decoration_start, old_decoration_end] = job_match.indices[3];
+						new_line = line.slice(0, old_decoration_start) + new_decoration_str + line.slice(old_decoration_end);
+					}
+				} else {
+					let num_hours_hh_mm_str = job_match[1];
+					let num_hours_float = get_num_hours_float_from_HH_MM_str(num_hours_hh_mm_str);
+					let start_time = new Date(start_date.getTime() + total_num_hours*60*60*1000);
+					let start_time_str = get_hh_mm_str(start_time);
+					total_num_hours += num_hours_float;
+					end_time = new Date(start_date.getTime() + total_num_hours*60*60*1000);
+					let end_time_str = get_hh_mm_str(end_time);
+					let new_decoration_str = getDecorationStr(start_time_str, end_time_str);
+					let has_decoration_already = !!job_match[3];
+					if(has_decoration_already) {
+						let [old_decoration_start, old_decoration_end] = job_match.indices[3];
+						new_line = line.slice(0, old_decoration_start) + new_decoration_str + line.slice(old_decoration_end);
+					} else {
+						new_line = line + new_decoration_str;
+					}
+				}
+			}
+		}
+		replace_cur_line(new_line);
+		cur_line_start_pos += (new_line !== undefined ? new_line : line).length + LINE_DELIM.length;
+	}
+	if(selectionStart !== undefined && selectionEnd !== undefined) {
+		textarea.selectionStart = selectionStart;
+		textarea.selectionEnd = selectionEnd;
+	} else {
+		/* I think that if this ever happens, it will be rare. */
+	}
 }
 
 function get_num_hours_float_from_HH_MM_str(hh_mm_str_) {
@@ -185,48 +182,12 @@ function bind_text_control_to_localstorage(textarea_id_) {
 	setInterval(function() { localStorage.setItem(storage_key, get_value(textarea_id_)); }, 60*1000);
 }
 
-function bind_radio_buttons_to_localstorage(radiogroupname_) {
-	var storage_key = document.URL+' - radiogroup:'+radiogroupname_;
-	var stored_val = localStorage.getItem(storage_key);
-	if(stored_val != null) {
-		set_radio_val(radiogroupname_, stored_val);
-	}
-	$("input[type=radio][name='" + radiogroupname_ + "']").each(function() {
-		$(this).click(function() { 
-			localStorage.setItem(storage_key, radio_val(radiogroupname_));
-		});
-	});
-}
-
-function set_radio_val(groupname_, newval_) {
-	$('input:radio[name='+groupname_+']').val([newval_]);
-	var s = 'input[name='+groupname_+']:checked';
-	$(s).click();
-}
-
 function get_value(textfieldname_) {
 	return $("#"+textfieldname_).val();
 }
 
 function set_value(textfieldname_, value_) {
 	return $("#"+textfieldname_).val(value_).trigger('input');
-}
-
-/* If we don't do this then the tab key switches to the next GUI control.  
-Code thanks to https://stackoverflow.com/a/14166052 */
-function make_tab_key_insert_tab_character_on_all_textareas() {
-	let textareas = document.getElementsByTagName('textarea');
-	let count = textareas.length;
-	for(let i=0;i<count;i++){
-			textareas[i].onkeydown = function(e){
-					if(e.keyCode==9 || e.which==9){
-							e.preventDefault();
-							let s = this.selectionStart;
-							this.value = this.value.substring(0,this.selectionStart) + "\t" + this.value.substring(this.selectionEnd);
-							this.selectionEnd = s+1; 
-					}
-			}
-	}
 }
 
 function radio_val(groupname_) {
@@ -240,15 +201,28 @@ $(document).ready(initialize);
 	<body>
 		<details>
 			<summary>Instructions</summary>
-			<textarea id="textarea_input_example" rows="33" cols="120" spellcheck="false" wrap="off" 
-				style="background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); background-size: 100% 4rem;" readonly>
+			<textarea id="textarea_input_example" rows="35" spellcheck="false" readonly>
+
+This page is a "to do list" that does math on the time that each job takes.  
+You specify how long each job will take.  This page will add up the durations of all 
+the jobs, and show you the expected time-of-day that you will finish the jobs.  You 
+can cross off the jobs as you go.
+
 Example: 
 (copy this and paste it into the text area below)
 
 time=15:00
 job #1  0:30
 job #2  1:15
-job #2  0:45
+job #3  0:45
+
+After you paste it, you will see that start and end times are automatically added 
+to it, so it will look like this: 
+
+time=15:00  [start=15:00, end=15:00]
+job #1  0:30  [start=15:00, end=15:30]
+job #2  1:15  [start=15:30, end=16:45]
+job #3  0:45  [start=16:45, end=17:30]
 
 A "time=HH:MM" line sets (or resets) the start time.  You can use multiple 
 "time=HH:MM" lines.  If you don't use any, the current time will be used as the 
@@ -260,39 +234,29 @@ Any line that doesn't start with "time=" and starts with a non-space character
 and ends with HH:MM will be counted as a job, and HH:MM is its duration.  Therefore 
 the line below will not be counted.  So adding an "x" is a convenient way of crossing 
 off jobs:
-job #4 0:30 x
+job #3  0:45 x  [start=16:45, end=17:30]
+
+When you add an "x" (or any non-space character), the start and end times will be 
+automatically deleted.  So the line will look like this:
+
+job #3  0:45 x
 
 You can add lines which contain numbers and they won't be counted as a job, as 
 long as the line starts with a space or tab.  
-job #5   0:30
+job #3  0:45   [start=16:45, end=17:30]
 [^^ the previous line is a job]
 	- note: last time this took 0:40 
 	  [^^ the previous line is not a job]
 
-One way to show a reminder that you need to cross off, or show the start time 
-for a job, is to specify a time of 0:00, as below: 
+If you want to add not so much a job, but a reminder One way to show a reminder that you need to cross off is to specify a time of 
+0:00, as below: 
 
-remember to drink water  0:00
+remember to breath  0:00  [start=16:33, end=16:33]
 
-dinner start time (target 18:30)  0:00
 
 			</textarea>
 		</details>
 		<br>
-		<button id="export_button">Export</button>
-		<br>
-		<br>
-		<textarea rows="2" cols="120" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>Input:</textarea>
-		<textarea rows="2" cols="10" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>Duration:</textarea>
-		<textarea rows="2" cols="10" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>Start time:</textarea>
-		<textarea rows="2" cols="10" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>End time:</textarea>
-		<textarea id="textarea_input" rows="600" cols="120" spellcheck="false" wrap="off" 
-			style="background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); background-size: 100% 4rem;"></textarea>
-		<textarea id="textarea_output_durations" rows="600" cols="10" spellcheck="false" readonly 
-			style="background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); background-size: 100% 4rem;"></textarea>
-		<textarea id="textarea_output_start_times" rows="600" cols="10" spellcheck="false" readonly 
-			style="background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); background-size: 100% 4rem;"></textarea>
-		<textarea id="textarea_output_end_times" rows="600" cols="10" spellcheck="false" readonly 
-			style="background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); background-size: 100% 4rem;"></textarea>
+		<textarea id="textarea_input" rows="600" spellcheck="false"></textarea>
 	</body>
 </html>

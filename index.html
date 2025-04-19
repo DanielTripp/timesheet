@@ -34,7 +34,7 @@ function initialize() {
 	$('#export_button').click(async () => {
 		try {
 			update_output_textareas();
-			let str = getExportedStringVersionOfTextAreas();
+			let str = getExportSingleStringVersionOfTextAreas();
 			await navigator.clipboard.writeText(str);
 			alert('Exported to clipboard.');
 		} catch(e) {
@@ -50,7 +50,7 @@ function getTextAreaLines(selector_) {
 	return $(selector_).val().split(/\r?\n/);
 }
 
-function getExportedStringVersionOfTextAreas() {
+function getExportSingleStringVersionOfTextAreas() {
 	let inputLines = getTextAreaLines('#textarea_input');
 	let outputDurationsLines = getTextAreaLines('#textarea_output_durations');
 	let outputStartTimeLines = getTextAreaLines('#textarea_output_start_times');
@@ -73,7 +73,7 @@ function getExportedStringVersionOfTextAreas() {
 	for(let i=0; i<inputLines.length; i++) {
 		let a = inputLines[i], b = outputDurationsLines[i], c = outputStartTimeLines[i], d = outputEndTimeLines[i];
 		if(b) {
-			r += `${a}   End time = ${d}\n`;
+			r += `${a}   (Start time = ${c}, end time = ${d})\n`;
 		} else {
 			r += `${inputLines[i]}\n`;
 		}

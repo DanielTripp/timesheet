@@ -52,15 +52,15 @@ function getTextAreaLines(selector_) {
 
 function getExportedStringVersionOfTextAreas() {
 	let inputLines = getTextAreaLines('#textarea_input');
-	let outputSingleJobTimesLines = getTextAreaLines('#textarea_output_single_job_times');
-	let outputTimeTallyLines = getTextAreaLines('#textarea_output_time_tally');
-	let outputTimeOfDayLines = getTextAreaLines('#textarea_output_time_of_day');
-	if((new Set([inputLines.length, outputSingleJobTimesLines.length, outputTimeTallyLines.length, outputTimeOfDayLines.length])).size != 1) {
+	let outputDurationsLines = getTextAreaLines('#textarea_output_durations');
+	let outputStartTimeLines = getTextAreaLines('#textarea_output_start_times');
+	let outputEndTimeLines = getTextAreaLines('#textarea_output_end_times');
+	if((new Set([inputLines.length, outputDurationsLines.length, outputStartTimeLines.length, outputEndTimeLines.length])).size != 1) {
 		throw new Error("text area lines aren't the same length.");
 	}
 	let maxInputJobLineLen = 0;
 	for(let i=0; i<inputLines.length; i++) {
-		let a = inputLines[i], b = outputSingleJobTimesLines[i], c = outputTimeTallyLines[i], d = outputTimeOfDayLines[i];
+		let a = inputLines[i], b = outputDurationsLines[i], c = outputStartTimeLines[i], d = outputEndTimeLines[i];
 		if((new Set([!!b, !!c, !!d])).size != 1) {
 			throw new Error("output column presence doesn't match.");
 		}
@@ -71,7 +71,7 @@ function getExportedStringVersionOfTextAreas() {
 	}
 	let r = '';
 	for(let i=0; i<inputLines.length; i++) {
-		let a = inputLines[i], b = outputSingleJobTimesLines[i], c = outputTimeTallyLines[i], d = outputTimeOfDayLines[i];
+		let a = inputLines[i], b = outputDurationsLines[i], c = outputStartTimeLines[i], d = outputEndTimeLines[i];
 		if(b) {
 			r += `${a}   End time = ${d}\n`;
 		} else {
@@ -93,9 +93,9 @@ function get_date_from_hh_mm_str(hh_mm_str_) {
 
 function make_output_textareas_scroll_pos_match_input_textarea_scroll_pos() {
 	let pos = $('#textarea_input').scrollTop();
-	$('#textarea_output_single_job_times').scrollTop(pos);
-	$('#textarea_output_time_tally').scrollTop(pos);
-	$('#textarea_output_time_of_day').scrollTop(pos);
+	$('#textarea_output_durations').scrollTop(pos);
+	$('#textarea_output_start_times').scrollTop(pos);
+	$('#textarea_output_end_times').scrollTop(pos);
 }
 
 function on_input_changed() {
@@ -104,14 +104,14 @@ function on_input_changed() {
 }
 
 function get_hh_mm_str(date_) {
-	return sprintf("%02d:%02d\n", date_.getHours(), date_.getMinutes());
+	return sprintf("%02d:%02d", date_.getHours(), date_.getMinutes());
 }
 
 function update_output_textareas() {
 	let all_lines = $('#textarea_input').val();
 	let lines = all_lines.split(/\r?\n/);
 	let total_num_hours = 0.0;
-	let time_tally_str = '', single_job_times_str = '', time_of_day_str = '';
+	let durations_str = '', start_times_str = '', end_times_str = '';
 	let start_date = new Date();
 	lines.forEach(function(line) {
 		let set_time_of_day_match = line.match(/^time=.*?(\d{1,2}:\d\d|now)\s*$/);
@@ -120,32 +120,34 @@ function update_output_textareas() {
 			let time_of_day_date = new_time_of_day_str === "now" ? new Date() : get_date_from_hh_mm_str(new_time_of_day_str);
 			start_date = time_of_day_date;
 			total_num_hours = 0.0;
-			single_job_times_str += "0:00\n";
-			time_tally_str += "0:00\n";
-			time_of_day_str += get_hh_mm_str(start_date);
+			durations_str += "0:00\n";
+			let start_and_end_time = get_hh_mm_str(start_date);
+			start_times_str += start_and_end_time+'\n';
+			end_times_str += start_and_end_time+'\n';
 		} else {
 			let job_match = line.match(/^[^\s]+.*?(\d+:\d\d)\s*$/);
 			if(job_match != null) {
 				let num_hours_hh_mm_str = job_match[1];
 				let num_hours_float = get_num_hours_float_from_HH_MM_str(num_hours_hh_mm_str);
+				let start_time = new Date(start_date.getTime() + total_num_hours*60*60*1000);
+				start_times_str += get_hh_mm_str(start_time)+'\n';
 				total_num_hours += num_hours_float;
-				single_job_times_str += sprintf("%s\n", get_HH_MM_str_from_num_hours_float(num_hours_float));
-				time_tally_str += sprintf("%s\n", get_HH_MM_str_from_num_hours_float(total_num_hours));
-				time_of_day = new Date(start_date.getTime() + total_num_hours*60*60*1000);
-				time_of_day_str += get_hh_mm_str(time_of_day);
+				durations_str += sprintf("%s\n", get_HH_MM_str_from_num_hours_float(num_hours_float));
+				end_time = new Date(start_date.getTime() + total_num_hours*60*60*1000);
+				end_times_str += get_hh_mm_str(end_time)+'\n';
 			} else {
-				single_job_times_str += "\n";
-				time_tally_str += "\n";
-				time_of_day_str += "\n";
+				durations_str += "\n";
+				start_times_str += "\n";
+				end_times_str += "\n";
 			}
 		}
 	});
-	single_job_times_str = single_job_times_str.slice(0, -1);
-	time_tally_str = time_tally_str.slice(0, -1);
-	time_of_day_str = time_of_day_str.slice(0, -1);
-	$('#textarea_output_single_job_times').val(single_job_times_str);
-	$('#textarea_output_time_tally').val(time_tally_str);
-	$('#textarea_output_time_of_day').val(time_of_day_str);
+	durations_str = durations_str.slice(0, -1);
+	start_times_str = start_times_str.slice(0, -1);
+	end_times_str = end_times_str.slice(0, -1);
+	$('#textarea_output_durations').val(durations_str);
+	$('#textarea_output_start_times').val(start_times_str);
+	$('#textarea_output_end_times').val(end_times_str);
 }
 
 function get_num_hours_float_from_HH_MM_str(hh_mm_str_) {
@@ -255,14 +257,17 @@ sets the start time to the current time - and this will also be updated several
 times per minute.
 
 Any line that doesn't start with "time=" and starts with a non-space character 
-and ends with HH:MM will be counted towards the time tally.  Therefore the line 
-below will not be counted.  So adding an "x" is a convenient way of crossing 
+and ends with HH:MM will be counted as a job, and HH:MM is its duration.  Therefore 
+the line below will not be counted.  So adding an "x" is a convenient way of crossing 
 off jobs:
 job #4 0:30 x
 
-You can add lines which contain numbers and they won't be counted towards the 
-tally, as long as the line starts with a space or tab.  job #5   0:30
+You can add lines which contain numbers and they won't be counted as a job, as 
+long as the line starts with a space or tab.  
+job #5   0:30
+[^^ the previous line is a job]
 	- note: last time this took 0:40 
+	  [^^ the previous line is not a job]
 
 One way to show a reminder that you need to cross off, or show the start time 
 for a job, is to specify a time of 0:00, as below: 
@@ -278,16 +283,16 @@ dinner start time (target 18:30)  0:00
 		<br>
 		<br>
 		<textarea rows="2" cols="120" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>Input:</textarea>
-		<textarea rows="2" cols="10" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>Job time:</textarea>
-		<textarea rows="2" cols="10" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>Job time tally:</textarea>
-		<textarea rows="2" cols="10" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>Time of day finished:</textarea>
+		<textarea rows="2" cols="10" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>Duration:</textarea>
+		<textarea rows="2" cols="10" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>Start time:</textarea>
+		<textarea rows="2" cols="10" spellcheck="false" style="background-size: 100% 4rem; resize: none;" readonly>End time:</textarea>
 		<textarea id="textarea_input" rows="600" cols="120" spellcheck="false" wrap="off" 
 			style="background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); background-size: 100% 4rem;"></textarea>
-		<textarea id="textarea_output_single_job_times" rows="600" cols="10" spellcheck="false" readonly 
+		<textarea id="textarea_output_durations" rows="600" cols="10" spellcheck="false" readonly 
 			style="background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); background-size: 100% 4rem;"></textarea>
-		<textarea id="textarea_output_time_tally" rows="600" cols="10" spellcheck="false" readonly 
+		<textarea id="textarea_output_start_times" rows="600" cols="10" spellcheck="false" readonly 
 			style="background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); background-size: 100% 4rem;"></textarea>
-		<textarea id="textarea_output_time_of_day" rows="600" cols="10" spellcheck="false" readonly 
+		<textarea id="textarea_output_end_times" rows="600" cols="10" spellcheck="false" readonly 
 			style="background-image: linear-gradient(#F1F1F1 50%, #F9F9F9 50%); background-size: 100% 4rem;"></textarea>
 	</body>
 </html>

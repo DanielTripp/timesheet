@@ -26,7 +26,6 @@
 let g_text_area_ids_with_write_scheduled = new buckets.Set();
 
 function initialize() {
-
 	$('#textarea_input').on('propertychange keyup input paste', on_input_changed);
 	on_input_changed();
 
@@ -194,7 +193,7 @@ function radio_val(groupname_) {
 	return $('input[name='+groupname_+']:checked').val();
 }
 
-$(document).ready(initialize);
+window.addEventListener('load', initialize);
 
 		</script>
 	</head>

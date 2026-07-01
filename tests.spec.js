@@ -3,11 +3,14 @@ let path = require('path');
 let assert = require('assert');
 let { pathToFileURL } = require('url');
 
-test('open local file', async ({ page }) => {
+test('type job, time, newline', async ({ page }) => {
   let filePath = path.resolve(__dirname, 'index.html');
   let fileUrl = pathToFileURL(filePath).href;
+  await page.goto(fileUrl, {waitUntil: 'load'});
 
-  await page.goto(fileUrl);
-  let details = page.locator('details');
-  assert.strictEqual(123, 456);
+  let textArea = page.locator('#textarea_input');
+  await textArea.fill('');
+  await textArea.pressSequentially('time=12:00\njob A 0:30\n');
+  await expect(textArea).toHaveValue('time=12:00\njob A 0:30  [start=12:00, end=12:30]\n');
+
 });

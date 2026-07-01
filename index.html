@@ -293,7 +293,8 @@ function populate_autosaves_table(textarea_id_) {
 	header_row.append($('<th></th>').text('Lines'));
 	table.append(header_row);
 
-	for(let [i_autosave, autosave] of autosaves.entries()) {
+	for(let i_autosave = autosaves.length - 1; i_autosave >= 0; --i_autosave) {
+		let autosave = autosaves[i_autosave];
 		let row = $('<tr></tr>');
 		let restore_button = $('<button type="button">Restore</button>');
 		restore_button.on('click', function() { restore_autosave(i_autosave); });

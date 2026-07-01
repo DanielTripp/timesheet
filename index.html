@@ -19,17 +19,32 @@
 				box-sizing: border-box; 
 			}
 
+			table {
+				border-collapse: collapse;
+				margin-top: 0.5em;
+			}
+
+			th, td {
+				border: 1px solid #CCCCCC;
+				padding: 0.25em 0.5em;
+				text-align: left;
+			}
+
 		</style>
 
 		<script type="text/javascript">
 
 let g_text_area_ids_with_write_scheduled = new buckets.Set();
+const AUTO_SAVE_INTERVAL_MILLIS = 30*1000;
+const AUTO_SAVE_HISTORY_HOURS_TO_KEEP = 2;
 
 function initialize() {
 	$('#textarea_input').on('propertychange keyup input paste', on_input_changed);
+	$('#button_show_hide_autosaves').on('click', function() { toggle_display_of_autosaves('textarea_input'); });
 	on_input_changed();
 
 	bind_text_control_to_localstorage('textarea_input');
+	bind_text_control_to_autosave_history('textarea_input');
 
 	setInterval(update_decorations, 1000*10);
 }
@@ -122,7 +137,7 @@ function update_decorations() {
 					let start_time = new Date(start_date.getTime() + total_num_hours*60*60*1000);
 					let start_time_str = get_hh_mm_str(start_time);
 					total_num_hours += num_hours_float;
-					end_time = new Date(start_date.getTime() + total_num_hours*60*60*1000);
+					let end_time = new Date(start_date.getTime() + total_num_hours*60*60*1000);
 					let end_time_str = get_hh_mm_str(end_time);
 					let new_decoration_str = getDecorationStr(start_time_str, end_time_str);
 					let has_decoration_already = !!job_match[3];
@@ -179,6 +194,120 @@ function bind_text_control_to_localstorage(textarea_id_) {
 
 	// The above write is supposed to catch all edits.  This one is a backup plan, in case that one has bugs: 
 	setInterval(function() { localStorage.setItem(storage_key, get_value(textarea_id_)); }, 60*1000);
+}
+
+function get_autosave_storage_key(textarea_id_) {
+	return document.URL+' - autosaves:'+textarea_id_;
+}
+
+function get_autosaves(textarea_id_) {
+	let storage_key = get_autosave_storage_key(textarea_id_);
+	let stored_val = localStorage.getItem(storage_key);
+	if(stored_val == null) {
+		return [];
+	}
+	let parsed_val = JSON.parse(stored_val);
+	return parsed_val;
+}
+
+function set_autosaves_in_localstorage(textarea_id_, autosaves_) {
+	let storage_key = get_autosave_storage_key(textarea_id_);
+	localStorage.setItem(storage_key, JSON.stringify(autosaves_));
+}
+
+function get_local_timestamp_str(date_) {
+	return sprintf(
+		"%04d-%02d-%02d %02d:%02d:%02d",
+		date_.getFullYear(),
+		date_.getMonth() + 1,
+		date_.getDate(),
+		date_.getHours(),
+		date_.getMinutes(),
+		date_.getSeconds()
+	);
+}
+
+function get_date_from_timestamp_str(timestamp_str_) {
+	let match = timestamp_str_.match(/^(\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)$/);
+	if(match == null) {
+		return null;
+	}
+	let year = parseInt(match[1]);
+	let month = parseInt(match[2]);
+	let day = parseInt(match[3]);
+	let hours = parseInt(match[4]);
+	let minutes = parseInt(match[5]);
+	let seconds = parseInt(match[6]);
+	return new Date(year, month - 1, day, hours, minutes, seconds);
+}
+
+function get_pruned_autosaves(autosaves_, now_) {
+	let oldest_time_to_keep_millis = now_.getTime() - AUTO_SAVE_HISTORY_HOURS_TO_KEEP*60*60*1000;
+	let r = [];
+	for(let autosave of autosaves_) {
+		let autosave_date = get_date_from_timestamp_str(autosave.timestamp);
+		if(autosave_date != null && autosave_date.getTime() >= oldest_time_to_keep_millis) {
+			r.push(autosave);
+		}
+	}
+	return r;
+}
+
+function auto_save_text_control(textarea_id_) {
+	let now = new Date();
+	let autosaves = get_pruned_autosaves(get_autosaves(textarea_id_), now);
+	let value = get_value(textarea_id_);
+	let most_recent_autosave = autosaves.length > 0 ? autosaves[autosaves.length - 1] : null;
+	if(most_recent_autosave == null || most_recent_autosave.value !== value) {
+		autosaves.push({
+			timestamp: get_local_timestamp_str(now),
+			value: value
+		});
+	}
+	set_autosaves_in_localstorage(textarea_id_, autosaves);
+}
+
+function bind_text_control_to_autosave_history(textarea_id_) {
+	auto_save_text_control(textarea_id_);
+	setInterval(() => { auto_save_text_control(textarea_id_); }, AUTO_SAVE_INTERVAL_MILLIS);
+}
+
+function toggle_display_of_autosaves(textarea_id_) {
+	let autosaves_div = $('#div_autosaves');
+	if(autosaves_div.css('display') === 'none') {
+		populate_autosaves_table(textarea_id_);
+		autosaves_div.show();
+	} else {
+		autosaves_div.hide();
+	}
+}
+
+function populate_autosaves_table(textarea_id_) {
+	let autosaves = get_autosaves(textarea_id_);
+	let table = $('#table_autosaves');
+	table.empty();
+
+	let header_row = $('<tr></tr>');
+	header_row.append($('<th></th>').text('Restore'));
+	header_row.append($('<th></th>').text('Timestamp'));
+	header_row.append($('<th></th>').text('Lines'));
+	table.append(header_row);
+
+	for(let [i_autosave, autosave] of autosaves.entries()) {
+		let row = $('<tr></tr>');
+		let restore_button = $('<button type="button">Restore</button>');
+		restore_button.on('click', function() { restore_autosave(i_autosave); });
+		row.append($('<td></td>').append(restore_button));
+		row.append($('<td></td>').text(autosave.timestamp));
+		row.append($('<td></td>').text(autosave.value.split('\n').length));
+		table.append(row);
+	}
+}
+
+function restore_autosave(i_autosave_) {
+	let autosaves = get_autosaves('textarea_input');
+	let autosave = autosaves[i_autosave_];
+	set_value('textarea_input', autosave.value);
 }
 
 function get_value(textfieldname_) {
@@ -255,7 +384,13 @@ remember to breath  0:00  [start=16:33, end=16:33]
 
 			</textarea>
 		</details>
-		<br>
-		<textarea id="textarea_input" rows="600" spellcheck="false"></textarea>
-	</body>
-</html>
+			<div style="margin: 0.5em 0 ;">
+				<button id="button_show_hide_autosaves">Show/hide auto-saves</button>
+				<div id="div_autosaves" style="display: none;">
+					<table id="table_autosaves"></table>
+				</div>
+			</div>
+			<textarea id="textarea_input" rows="600" spellcheck="false"></textarea>
+			<br>
+		</body>
+	</html>

@@ -41,6 +41,13 @@ function getDecorationStrRegexStr() {
 	return '[ ]{0,2}\\[start=\\d{1,2}:\\d\\d, end=\\d{1,2}:\\d\\d]';
 }
 
+/* I chose the regexes for "set time line" and "job line" to be pretty different, because once as a user I accidentally turned one line from the former into the latter, and that threw me off.  specifically, I changed this:
+time=06:00
+into this:
+xtime=06:00
+... and (an older version of) this function suddenly thought that that line was a job.  so now this function is more strict.  it considers a "time of day" to look like "NN:NN" and a "job duration" to look like "N:NN". 
+
+note 1: these regexes allow whitespace at the start of the line, so that a line can start with whitespace and still get parsed-and-decorated.  the use case is that I copy and paste back and forth between notepad++ and this web page a lot, and in notepad++ a timesheet (= value of this text area) is usually indented. */
 function update_decorations() {
 	let textarea = $('#textarea_input').get(0);
 	let selectionStart = textarea.selectionStart, selectionEnd = textarea.selectionEnd;
@@ -48,13 +55,15 @@ function update_decorations() {
 	let lines = textarea.value.split(LINE_DELIM);
 	let total_num_hours = 0.0;
 	let start_date = new Date();
-	let set_time_of_day_regex = new RegExp(`^\\s*time=.*?(\\d{1,2}:\\d\\d|now)(.*?)(${getDecorationStrRegexStr()})?\\s*$`, 'd');
-	let job_regex = new RegExp(`^\\s*[^[]*(\\d+:\\d\\d)(.*?)(${getDecorationStrRegexStr()})?\\s*$`, 'd');
+	let set_time_of_day_regex = new RegExp(`^\\s*time=(\\d\\d:\\d\\d|now)(.*?)(${getDecorationStrRegexStr()})?\\s*$`, 'd'), 
+	job_regex = new RegExp(`^\\s*[^[\\d=]*(\\d:\\d\\d)(.*?)(${getDecorationStrRegexStr()})?\\s*$`, 'd'); // see note 1 
 	let cur_line_start_pos = 0, cur_line_end_pos = 0;
 	for (let [iLine, line] of lines.entries()) {
 		let new_line;
 		cur_line_end_pos = cur_line_start_pos + line.length;
 		let set_time_of_day_match = line.match(set_time_of_day_regex);
+		let job_match = line.match(job_regex);
+		if(set_time_of_day_match && job_match) throw new Error("impossible");
 		if(set_time_of_day_match != null) {
 			let is_cancelled = /\S/.test(set_time_of_day_match[2]);
 			if(is_cancelled) {
@@ -80,7 +89,6 @@ function update_decorations() {
 				}
 			}
 		} else {
-			let job_match = line.match(job_regex);
 			if(job_match != null) {
 				let is_cancelled = /\S/.test(job_match[2]);
 				if(is_cancelled) {

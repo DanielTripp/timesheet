@@ -48,15 +48,10 @@ function update_decorations() {
 	let lines = textarea.value.split(LINE_DELIM);
 	let total_num_hours = 0.0;
 	let start_date = new Date();
-	let set_time_of_day_regex = new RegExp(`^time=.*?(\\d{1,2}:\\d\\d|now)(.*?)(${getDecorationStrRegexStr()})?\\s*$`, 'd');
-	let job_regex = new RegExp(`^[^\\s]+[^[]*(\\d+:\\d\\d)(.*?)(${getDecorationStrRegexStr()})?\\s*$`, 'd');
+	let set_time_of_day_regex = new RegExp(`^\\s*time=.*?(\\d{1,2}:\\d\\d|now)(.*?)(${getDecorationStrRegexStr()})?\\s*$`, 'd');
+	let job_regex = new RegExp(`^\\s*[^[]*(\\d+:\\d\\d)(.*?)(${getDecorationStrRegexStr()})?\\s*$`, 'd');
 	let cur_line_start_pos = 0, cur_line_end_pos = 0;
 	for (let [iLine, line] of lines.entries()) {
-		function replace_cur_line(new_line__) {
-			if(new_line__ !== undefined && new_line__ !== line) { /* setRangeText() breaks undo, so we don't want to call it any more than we need to. */
-				textarea.setRangeText(new_line__, cur_line_start_pos, cur_line_end_pos);
-			}
-		}
 		let new_line;
 		cur_line_end_pos = cur_line_start_pos + line.length;
 		let set_time_of_day_match = line.match(set_time_of_day_regex);
@@ -112,6 +107,11 @@ function update_decorations() {
 						new_line = line + new_decoration_str;
 					}
 				}
+			}
+		}
+		function replace_cur_line(new_line__) {
+			if(new_line__ !== undefined && new_line__ !== line) { /* setRangeText() breaks undo, so we don't want to call it any more than we need to. */
+				textarea.setRangeText(new_line__, cur_line_start_pos, cur_line_end_pos);
 			}
 		}
 		replace_cur_line(new_line);

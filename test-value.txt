@@ -1,0 +1,13 @@
+
+
+time=09:00    [start=09:00, end=09:00]
+(^^ desired: start and end equal to 09:00) 
+
+job 0:01  [start=09:00, end=09:01]
+(^^ desired: end == 09:01) 
+
+job 1 0:01
+(^^ desired: end == 09:02) 
+
+
+

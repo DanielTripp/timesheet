@@ -66,9 +66,7 @@ start time - and this will be updated several times per minute.  "time=now"
 sets the start time to the current time - and this will also be updated several 
 times per minute.
 
-Any line that doesn't start with "time=" and starts with a non-space character 
-and ends with HH:MM will be counted as a job, and HH:MM is its duration.  Therefore 
-the line below will not be counted.  So adding an "x" is a convenient way of crossing 
+Any line that looks like "job #1 0:30" will be counted as a job, and HH:MM is its duration.  The HH:MM needs to be at the end of the line.  This means that adding an "x" is a convenient way of crossing 
 off jobs:
 job #3  0:45 x  [start=16:45, end=17:30]
 
@@ -77,15 +75,7 @@ automatically deleted.  So the line will look like this:
 
 job #3  0:45 x
 
-You can add lines which contain numbers and they won't be counted as a job, as 
-long as the line starts with a space or tab.  
-job #3  0:45   [start=16:45, end=17:30]
-[^^ the previous line is a job]
-	- note: last time this took 0:40 
-	  [^^ the previous line is not a job]
-
-If you want to add not so much a job, but a reminder One way to show a reminder that you need to cross off is to specify a time of 
-0:00, as below: 
+If you want to add not so much a job, but a reminder (= something you want to force yourself to cross off), then one way to do that is to specify a time of 0:00, like this:
 
 remember to breath  0:00  [start=16:33, end=16:33]
 

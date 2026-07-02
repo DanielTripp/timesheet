@@ -56,3 +56,6 @@ stale decoration #2   0:150  [start=09:07, end=09:22]
 
 stale decoration #3   10:15  [start=09:07, end=09:22]
 (^^ desired: no decoration) 
+
+finished job, remove decoration please  0:45 x  [start=16:45, end=17:30]
+(^^ desired: no decoration) 

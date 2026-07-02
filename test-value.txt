@@ -35,3 +35,24 @@ time=9:00
 
  0:01 
 (^^ desired: no decoration) 
+
+a job name containing = is fine  0:01
+(^^ desired: end time == 09:05)
+
+a time with trailing whitespace is fine 0:01  	  	 
+(^^ desired: end time == 09:06)
+
+no space immed job time won't get parsed0:01
+(^^ desired: no decoration) 
+
+tab immed before job time will get parsed	0:01
+(^^ desired: end time == 09:07)
+
+stale decoration, we want to remove  0:1  [start=09:07, end=09:22]
+(^^ desired: no decoration) 
+
+stale decoration #2   0:150  [start=09:07, end=09:22]
+(^^ desired: no decoration) 
+
+stale decoration #3   10:15  [start=09:07, end=09:22]
+(^^ desired: no decoration) 

@@ -41,6 +41,11 @@ function getDecorationStrRegexStr() {
 	return '[ ]{0,2}\\[start=\\d{1,2}:\\d\\d, end=\\d{1,2}:\\d\\d]';
 }
 
+function get_line_without_decoration(line_) {
+	let decoration_regex = new RegExp(`${getDecorationStrRegexStr()}\\s*$`);
+	return line_.replace(decoration_regex, '');
+}
+
 /* I chose the regexes for "set time line" and "job line" to be pretty different, because once as a user I accidentally turned one line from the former into the latter, and that threw me off.  specifically, I changed this:
 time=06:00
 into this:
@@ -55,51 +60,32 @@ function update_decorations() {
 	let lines = textarea.value.split(LINE_DELIM);
 	let total_num_hours = 0.0;
 	let start_date = new Date();
-	let set_time_of_day_regex = new RegExp(`^\\s*time=(\\d\\d:\\d\\d|now)(.*?)(${getDecorationStrRegexStr()})?\\s*$`, 'd'), 
-	job_regex = new RegExp(`^\\s*[^[]*\\S[^[]*(?<![\\d=])(\\d:\\d\\d)(.*?)(${getDecorationStrRegexStr()})?\\s*$`, 'd'); // see note 1
+	let set_time_of_day_regex = /^(\s*time=(\d\d:\d\d|now))(.*?)\s*$/d;
+	let job_regex = /^(\s*[^[]*?\S)\s+(?<!\d)(\d:\d\d)(.*?)\s*$/d; // see note 1
 	let cur_line_start_pos = 0, cur_line_end_pos = 0;
 	for (let [iLine, line] of lines.entries()) {
-		let new_line;
+		let new_line = get_line_without_decoration(line);
 		cur_line_end_pos = cur_line_start_pos + line.length;
-		let set_time_of_day_match = line.match(set_time_of_day_regex);
-		let job_match = line.match(job_regex);
+		let set_time_of_day_match = new_line.match(set_time_of_day_regex);
+		let job_match = new_line.match(job_regex);
 		if(set_time_of_day_match && job_match) throw new Error(`impossible, line [${iLine}]`);
 		if(set_time_of_day_match != null) {
-			let is_cancelled = /\S/.test(set_time_of_day_match[2]);
-			if(is_cancelled) {
-				let new_decoration_str = '';
-				let has_decoration_already = !!set_time_of_day_match[3];
-				if(has_decoration_already) {
-					let [old_decoration_start, old_decoration_end] = set_time_of_day_match.indices[3];
-					new_line = line.slice(0, old_decoration_start) + new_decoration_str + line.slice(old_decoration_end);
-				}
-			} else {
-				let new_time_of_day_str = set_time_of_day_match[1];
+			let is_cancelled = /\S/.test(set_time_of_day_match[3]);
+			if(!is_cancelled) {
+				let new_time_of_day_str = set_time_of_day_match[2];
 				let time_of_day_date = new_time_of_day_str === "now" ? new Date() : get_date_from_hh_mm_str(new_time_of_day_str);
 				start_date = time_of_day_date;
 				total_num_hours = 0.0;
-				let start_time_str = get_hh_mm_str(start_date); end_time_str = start_time_str;
+				let start_time_str = get_hh_mm_str(start_date);
+				let end_time_str = start_time_str;
 				let new_decoration_str = getDecorationStr(start_time_str, end_time_str);
-				let has_decoration_already = !!set_time_of_day_match[3];
-				if(has_decoration_already) {
-					let [old_decoration_start, old_decoration_end] = set_time_of_day_match.indices[3];
-					new_line = line.slice(0, old_decoration_start) + new_decoration_str + line.slice(old_decoration_end);
-				} else {
-					new_line = line + new_decoration_str;
-				}
+				new_line = new_line + new_decoration_str;
 			}
 		} else {
 			if(job_match != null) {
-				let is_cancelled = /\S/.test(job_match[2]);
-				if(is_cancelled) {
-					let new_decoration_str = '';
-					let has_decoration_already = !!job_match[3];
-					if(has_decoration_already) {
-						let [old_decoration_start, old_decoration_end] = job_match.indices[3];
-						new_line = line.slice(0, old_decoration_start) + new_decoration_str + line.slice(old_decoration_end);
-					}
-				} else {
-					let num_hours_hh_mm_str = job_match[1];
+				let is_cancelled = /\S/.test(job_match[3]);
+				if(!is_cancelled) {
+					let num_hours_hh_mm_str = job_match[2];
 					let num_hours_float = get_num_hours_float_from_HH_MM_str(num_hours_hh_mm_str);
 					let start_time = new Date(start_date.getTime() + total_num_hours*60*60*1000);
 					let start_time_str = get_hh_mm_str(start_time);
@@ -107,13 +93,7 @@ function update_decorations() {
 					let end_time = new Date(start_date.getTime() + total_num_hours*60*60*1000);
 					let end_time_str = get_hh_mm_str(end_time);
 					let new_decoration_str = getDecorationStr(start_time_str, end_time_str);
-					let has_decoration_already = !!job_match[3];
-					if(has_decoration_already) {
-						let [old_decoration_start, old_decoration_end] = job_match.indices[3];
-						new_line = line.slice(0, old_decoration_start) + new_decoration_str + line.slice(old_decoration_end);
-					} else {
-						new_line = line + new_decoration_str;
-					}
+					new_line = new_line + new_decoration_str;
 				}
 			}
 		}
@@ -296,4 +276,3 @@ function radio_val(groupname_) {
 }
 
 window.addEventListener('load', initialize);
-

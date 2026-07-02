@@ -56,14 +56,14 @@ function update_decorations() {
 	let total_num_hours = 0.0;
 	let start_date = new Date();
 	let set_time_of_day_regex = new RegExp(`^\\s*time=(\\d\\d:\\d\\d|now)(.*?)(${getDecorationStrRegexStr()})?\\s*$`, 'd'), 
-	job_regex = new RegExp(`^\\s*[^[]*[^[\\d=](\\d:\\d\\d)(.*?)(${getDecorationStrRegexStr()})?\\s*$`, 'd'); // see note 1 
+	job_regex = new RegExp(`^\\s*[^[]*\\S[^[]*(?<![\\d=])(\\d:\\d\\d)(.*?)(${getDecorationStrRegexStr()})?\\s*$`, 'd'); // see note 1
 	let cur_line_start_pos = 0, cur_line_end_pos = 0;
 	for (let [iLine, line] of lines.entries()) {
 		let new_line;
 		cur_line_end_pos = cur_line_start_pos + line.length;
 		let set_time_of_day_match = line.match(set_time_of_day_regex);
 		let job_match = line.match(job_regex);
-		if(set_time_of_day_match && job_match) throw new Error("impossible");
+		if(set_time_of_day_match && job_match) throw new Error(`impossible, line [${iLine}]`);
 		if(set_time_of_day_match != null) {
 			let is_cancelled = /\S/.test(set_time_of_day_match[2]);
 			if(is_cancelled) {

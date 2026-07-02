@@ -100,6 +100,13 @@ function update_decorations() {
 		function replace_cur_line(new_line__) {
 			if(new_line__ !== undefined && new_line__ !== line) { /* setRangeText() breaks undo, so we don't want to call it any more than we need to. */
 				textarea.setRangeText(new_line__, cur_line_start_pos, cur_line_end_pos);
+				let num_chars_we_just_added = new_line__.length - line.length;
+				if(selectionStart > cur_line_end_pos) {
+					selectionStart += num_chars_we_just_added;
+				}
+				if(selectionEnd > cur_line_end_pos) {
+					selectionEnd += num_chars_we_just_added;
+				}
 			}
 		}
 		replace_cur_line(new_line);

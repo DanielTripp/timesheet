@@ -60,7 +60,7 @@ function update_decorations() {
 	let lines = textarea.value.split(LINE_DELIM);
 	let total_num_hours = 0.0;
 	let start_date = new Date();
-	let set_time_of_day_regex = /^(\s*time=(\d\d:\d\d|now))(.*?)\s*$/d;
+	let set_time_of_day_regex = /^(\s*time=(\d\d:\d\d|now))(.*?)\s*$/di;
 	let job_regex = /^(\s*[^[]*?\S)\s+(?<!\d)(\d:\d\d)(.*?)\s*$/d; // see note 1
 	let cur_line_start_pos = 0, cur_line_end_pos = 0;
 	for (let [iLine, line] of lines.entries()) {
@@ -73,7 +73,7 @@ function update_decorations() {
 			let is_cancelled = /\S/.test(set_time_of_day_match[3]);
 			if(!is_cancelled) {
 				let new_time_of_day_str = set_time_of_day_match[2];
-				let time_of_day_date = new_time_of_day_str === "now" ? new Date() : get_date_from_hh_mm_str(new_time_of_day_str);
+				let time_of_day_date = new_time_of_day_str.toLowerCase() === "now" ? new Date() : get_date_from_hh_mm_str(new_time_of_day_str);
 				start_date = time_of_day_date;
 				total_num_hours = 0.0;
 				let start_time_str = get_hh_mm_str(start_date);

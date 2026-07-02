@@ -205,10 +205,22 @@ function get_pruned_autosaves(autosaves_, now_) {
 	return r;
 }
 
+function remove_decorations(text_area_val_) {
+	const LINE_DELIM = '\n';
+	let lines = text_area_val_.split(LINE_DELIM);
+	let new_lines = [];
+	for (let line of lines) {
+		let new_line = get_line_without_decoration(line);
+		new_lines.push(new_line);
+	}
+	let r = new_lines.join(LINE_DELIM);
+	return r;
+}
+
 function auto_save_text_control(textarea_id_) {
 	let now = new Date();
 	let autosaves = get_pruned_autosaves(get_autosaves(textarea_id_), now);
-	let value = get_value(textarea_id_);
+	let value = remove_decorations(get_value(textarea_id_));
 	let most_recent_autosave = autosaves.length > 0 ? autosaves[autosaves.length - 1] : null;
 	if(most_recent_autosave == null || most_recent_autosave.value !== value) {
 		autosaves.push({

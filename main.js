@@ -56,7 +56,7 @@ function update_decorations() {
 	let total_num_hours = 0.0;
 	let start_date = new Date();
 	let set_time_of_day_regex = new RegExp(`^\\s*time=(\\d\\d:\\d\\d|now)(.*?)(${getDecorationStrRegexStr()})?\\s*$`, 'd'), 
-	job_regex = new RegExp(`^\\s*[^[]*[^\\d=]*(\\d:\\d\\d)(.*?)(${getDecorationStrRegexStr()})?\\s*$`, 'd'); // see note 1 
+	job_regex = new RegExp(`^\\s*[^[]*[^[\\d=](\\d:\\d\\d)(.*?)(${getDecorationStrRegexStr()})?\\s*$`, 'd'); // see note 1 
 	let cur_line_start_pos = 0, cur_line_end_pos = 0;
 	for (let [iLine, line] of lines.entries()) {
 		let new_line;
